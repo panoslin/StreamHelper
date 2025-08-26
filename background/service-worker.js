@@ -9,6 +9,9 @@
 // Storage key for captured m3u8 requests
 const STORAGE_KEY = 'captured_m3u8_requests';
 
+// Storage key for current active tab
+const ACTIVE_TAB_KEY = 'active_tab_id';
+
 // Storage key for request ID mapping (for better size matching)
 const REQUEST_ID_MAP_KEY = 'm3u8_request_id_map';
 
@@ -22,6 +25,42 @@ chrome.runtime.onInstalled.addListener(() => {
   console.log('StreamHelper extension installed');
   // Initialize storage with empty array
   chrome.storage.local.set({ [STORAGE_KEY]: [] });
+});
+
+/**
+ * Track active tab changes
+ */
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+  try {
+    // Store the new active tab ID
+    await chrome.storage.local.set({ [ACTIVE_TAB_KEY]: activeInfo.tabId });
+    
+    // Notify popup about tab change
+    notifyPopupAboutTabChange(activeInfo.tabId);
+    
+    console.log('Active tab changed to:', activeInfo.tabId);
+  } catch (error) {
+    console.error('Error tracking active tab:', error);
+  }
+});
+
+/**
+ * Track tab updates (for when tabs are refreshed or navigated)
+ */
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'complete' && tab.active) {
+    try {
+      // Update active tab ID when current tab is updated
+      await chrome.storage.local.set({ [ACTIVE_TAB_KEY]: tabId });
+      
+      // Notify popup about tab change
+      notifyPopupAboutTabChange(tabId);
+      
+      console.log('Active tab updated:', tabId);
+    } catch (error) {
+      console.error('Error updating active tab:', error);
+    }
+  }
 });
 
 /**
@@ -180,6 +219,20 @@ function notifyPopupAboutNewRequest(requestData) {
 }
 
 /**
+ * Notify popup about tab change
+ * @param {number} tabId - The new active tab ID
+ */
+function notifyPopupAboutTabChange(tabId) {
+  // Broadcast message to all extension views about tab change
+  chrome.runtime.sendMessage({
+    type: 'TAB_CHANGED',
+    data: { tabId: tabId }
+  }).catch(() => {
+    // Ignore errors when no listeners are available
+  });
+}
+
+/**
  * Handle messages from popup and content scripts
  */
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -189,6 +242,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       chrome.storage.local.get([STORAGE_KEY], (result) => {
         sendResponse({ requests: result[STORAGE_KEY] || [] });
       });
+      return true; // Indicates async response
+      
+    case 'GET_M3U8_REQUESTS_BY_TAB':
+      // Return requests filtered by tab ID
+      getRequestsByTabId(message.tabId, sendResponse);
       return true; // Indicates async response
       
     case 'CLEAR_M3U8_REQUESTS':
@@ -391,6 +449,26 @@ async function cleanupRequestIdMappings(requestId) {
     await chrome.storage.local.set({ [REQUEST_ID_MAP_KEY]: requestMap });
   } catch (error) {
     console.error('Error cleaning up request ID mappings:', error);
+  }
+}
+
+/**
+ * Get m3u8 requests filtered by tab ID
+ * @param {number} tabId - The tab ID to filter by
+ * @param {Function} sendResponse - Callback to send response
+ */
+async function getRequestsByTabId(tabId, sendResponse) {
+  try {
+    const result = await chrome.storage.local.get([STORAGE_KEY]);
+    let requests = result[STORAGE_KEY] || [];
+    
+    // Filter requests by tab ID
+    const filteredRequests = requests.filter(req => req.tabId === tabId);
+    
+    sendResponse({ requests: filteredRequests });
+  } catch (error) {
+    console.error('Error getting requests by tab ID:', error);
+    sendResponse({ requests: [], error: error.message });
   }
 }
 

@@ -14,6 +14,7 @@ A modern, clean Chrome extension that captures m3u8 streaming requests from web 
 - **Request Management**: Delete individual requests or clear all
 - **Export Functionality**: Export captured requests to JSON
 - **Page Context**: Shows which page each request came from
+- **Tab-Specific Views**: View requests from current tab only or all tabs
 - **Real-time Updates**: Live notifications when new requests are captured
 
 ## Installation
@@ -61,8 +62,17 @@ A modern, clean Chrome extension that captures m3u8 streaming requests from web 
    - Timestamp
    - Page title and URL
    - Request type and metadata
+   - Tab ID for context
 4. Stores in Chrome's local storage
 5. Updates popup interface in real-time
+
+### Tab-Specific Functionality
+
+The extension intelligently tracks which tab each m3u8 request comes from:
+- **Default View**: Shows only requests from the current active tab
+- **Toggle Option**: Switch between "Current Tab" and "All Requests" views
+- **Real-time Updates**: Automatically updates when switching between tabs
+- **Smart Filtering**: New requests only appear if they're from the current tab (when in current tab mode)
 
 ## File Structure
 

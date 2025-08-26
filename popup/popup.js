@@ -14,6 +14,7 @@ class StreamHelperPopup {
     this.requests = [];
     this.filteredRequests = [];
     this.isLoading = false;
+    this.viewMode = 'currentTab'; // 'currentTab' or 'allRequests'
     
     // Initialize the popup
     this.init();
@@ -22,10 +23,11 @@ class StreamHelperPopup {
   /**
    * Initialize the popup and set up event listeners
    */
-  init() {
+  async init() {
     this.setupEventListeners();
-    this.loadRequests();
+    await this.loadCurrentTabRequests();
     this.updateStatus('Ready');
+    this.updateViewModeToggle();
   }
 
   /**
@@ -63,19 +65,76 @@ class StreamHelperPopup {
       this.openSettings();
     });
 
+    // View mode toggle button
+    document.getElementById('viewModeToggle').addEventListener('click', () => {
+      this.toggleViewMode();
+    });
+
     // Listen for messages from background script
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (message.type === 'NEW_M3U8_REQUEST') {
         this.handleNewRequest(message.data);
       } else if (message.type === 'M3U8_REQUEST_SIZE_UPDATE') {
         this.handleSizeUpdate(message.data);
+      } else if (message.type === 'TAB_CHANGED') {
+        this.handleTabChange(message.data.tabId);
       }
     });
 
     // Listen for popup focus to refresh data
     window.addEventListener('focus', () => {
-      this.loadRequests();
+      this.loadCurrentTabRequests();
     });
+  }
+
+  /**
+   * Get the current active tab ID
+   * @returns {Promise<number>} The current active tab ID
+   */
+  async getCurrentTabId() {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      return tab.id;
+    } catch (error) {
+      console.error('Error getting current tab ID:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Load m3u8 requests for the current active tab
+   */
+  async loadCurrentTabRequests() {
+    try {
+      this.setLoading(true);
+      this.updateStatus('Loading current tab requests...');
+
+      const currentTabId = await this.getCurrentTabId();
+      if (!currentTabId) {
+        this.updateStatus('Error: Cannot determine current tab');
+        this.showToast('Error: Cannot determine current tab', 'error');
+        return;
+      }
+
+      const response = await this.sendMessageToBackground({
+        type: 'GET_M3U8_REQUESTS_BY_TAB',
+        tabId: currentTabId
+      });
+
+      if (response && response.requests) {
+        this.requests = response.requests;
+        this.filteredRequests = [...this.requests];
+        this.renderRequests();
+        this.updateRequestCount();
+        this.updateStatus('Ready');
+      }
+    } catch (error) {
+      console.error('Error loading current tab requests:', error);
+      this.updateStatus('Error loading requests');
+      this.showToast('Error loading requests', 'error');
+    } finally {
+      this.setLoading(false);
+    }
   }
 
   /**
@@ -84,7 +143,7 @@ class StreamHelperPopup {
   async loadRequests() {
     try {
       this.setLoading(true);
-      this.updateStatus('Loading requests...');
+      this.updateStatus('Loading all requests...');
 
       const response = await this.sendMessageToBackground({
         type: 'GET_M3U8_REQUESTS'
@@ -110,14 +169,76 @@ class StreamHelperPopup {
    * Refresh the requests list
    */
   refreshRequests() {
-    this.loadRequests();
+    this.loadCurrentTabRequests();
+  }
+
+  /**
+   * Handle tab change events
+   * @param {number} tabId - The new active tab ID
+   */
+  async handleTabChange(tabId) {
+    try {
+      // Check if the new tab is the current tab
+      const currentTabId = await this.getCurrentTabId();
+      if (currentTabId === tabId) {
+        // Reload requests for the new tab
+        await this.loadCurrentTabRequests();
+        this.showToast('Switched to new tab', 'info');
+      }
+    } catch (error) {
+      console.error('Error handling tab change:', error);
+    }
+  }
+
+  /**
+   * Toggle between current tab and all requests view
+   */
+  async toggleViewMode() {
+    if (this.viewMode === 'currentTab') {
+      // Switch to all requests view
+      this.viewMode = 'allRequests';
+      await this.loadRequests();
+      this.updateViewModeToggle();
+      this.showToast('Showing all requests', 'info');
+    } else {
+      // Switch to current tab view
+      this.viewMode = 'currentTab';
+      await this.loadCurrentTabRequests();
+      this.updateViewModeToggle();
+      this.showToast('Showing current tab requests', 'info');
+    }
+  }
+
+  /**
+   * Update the view mode toggle button appearance
+   */
+  updateViewModeToggle() {
+    const toggleBtn = document.getElementById('viewModeToggle');
+    const toggleText = document.getElementById('viewModeText');
+    
+    if (this.viewMode === 'currentTab') {
+      toggleBtn.classList.remove('active');
+      toggleText.textContent = 'Current Tab';
+    } else {
+      toggleBtn.classList.add('active');
+      toggleText.textContent = 'All Requests';
+    }
   }
 
   /**
    * Handle new m3u8 request notifications
    * @param {Object} requestData - The new request data
    */
-  handleNewRequest(requestData) {
+  async handleNewRequest(requestData) {
+    // Check if we should show this request based on current view mode
+    if (this.viewMode === 'currentTab') {
+      const currentTabId = await this.getCurrentTabId();
+      if (requestData.tabId !== currentTabId) {
+        // Don't show requests from other tabs when in current tab mode
+        return;
+      }
+    }
+    
     // Add new request to the beginning of the list
     this.requests.unshift(requestData);
     this.filteredRequests.unshift(requestData);

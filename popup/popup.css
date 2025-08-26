@@ -139,6 +139,30 @@ body {
   color: var(--primary-color);
 }
 
+.view-mode-toggle {
+  background: none;
+  border: 1px solid var(--border-color);
+  padding: 2px var(--spacing-xs);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  transition: var(--transition);
+  background: var(--background-secondary);
+}
+
+.view-mode-toggle:hover {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  border-color: var(--primary-color);
+}
+
+.view-mode-toggle.active {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
 .total-size {
   font-weight: var(--font-weight-medium);
   color: var(--accent-color);

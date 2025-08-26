@@ -18,6 +18,7 @@
 ## 🔧 What You Get
 
 - **Real-time M3U8 capture** from all websites
+- **Tab-specific views** - see only current tab requests or all requests
 - **Modern, clean interface** with Material Design
 - **Smart URL display** showing hostname and path (no parameters)
 - **Request size tracking** from network response headers
@@ -31,9 +32,18 @@
 
 1. **Background monitoring** - Extension watches all network traffic
 2. **Smart filtering** - Only captures `.m3u8` requests
-3. **Context capture** - Records page title, URL, timestamp
-4. **Real-time updates** - New requests appear immediately
-5. **Persistent storage** - Requests saved between sessions
+3. **Context capture** - Records page title, URL, timestamp, and tab ID
+4. **Tab-specific views** - Shows only current tab requests by default
+5. **Real-time updates** - New requests appear immediately
+6. **Persistent storage** - Requests saved between sessions
+
+## 🔄 Tab-Specific Views
+
+The extension now intelligently tracks which tab each request comes from:
+- **Current Tab Mode** (default): Shows only requests from the active tab
+- **All Requests Mode**: Shows requests from all tabs
+- **Toggle Button**: Click "Current Tab" / "All Requests" to switch views
+- **Auto-update**: Automatically refreshes when switching between tabs
 
 ## 🧪 Testing
 
