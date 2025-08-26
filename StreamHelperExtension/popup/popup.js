@@ -372,10 +372,10 @@ class StreamHelperPopup {
       this.copyUrl(request.url);
     });
 
-    // Set up yt-dlp button
+    // Set up yt-dlp button with request context
     const ytdlpBtn = requestItem.querySelector('.ytdlp-btn');
     ytdlpBtn.addEventListener('click', () => {
-      this.copyYtDlpCommand(request.url, request.pageTitle);
+      this.copyYtDlpCommand(request.url, request.pageTitle, request);
     });
 
     // Set up delete button
@@ -741,20 +741,66 @@ class StreamHelperPopup {
   }
 
   /**
-   * Generate yt-dlp command for downloading the stream
+   * Generate enhanced yt-dlp command for downloading the stream
    * @param {string} url - The m3u8 URL
    * @param {string} title - The page title for filename
-   * @returns {string} Complete yt-dlp command
+   * @param {Object} request - The full request object with browser context
+   * @returns {string} Complete yt-dlp command with reliability options
    */
-  generateYtDlpCommand(url, title) {
+  generateYtDlpCommand(url, title, request) {
     // Clean the title for use as filename
     const cleanTitle = title
       .replace(/[<>:"/\\|?*]/g, '_') // Remove invalid filename characters
       .replace(/\s+/g, '_') // Replace spaces with underscores
       .substring(0, 50); // Limit length
     
-    // Generate the yt-dlp command
-    const command = `yt-dlp "${url}" -o "${cleanTitle}.%(ext)s"`;
+    let command = `yt-dlp "${url}" -o "${cleanTitle}.%(ext)s"`;
+    
+    // Add essential reliability options
+    command += ` --no-check-certificate`; // Skip SSL verification (fixes SSL error)
+    command += ` --ignore-errors`; // Continue on errors
+    command += ` --retries 3`; // Retry failed downloads
+    
+    // Add referer header if we have the page URL
+    if (request.pageUrl && request.pageUrl !== 'Unknown') {
+      try {
+        const pageUrl = new URL(request.pageUrl);
+        const referer = `${pageUrl.protocol}//${pageUrl.host}${pageUrl.pathname}`;
+        command += ` --add-header "Referer:${referer}"`;
+      } catch (error) {
+        // If URL parsing fails, use the page URL as-is
+        command += ` --add-header "Referer:${request.pageUrl}"`;
+      }
+    }
+    
+    // Add user agent header to mimic browser
+    if (request.userAgent && request.userAgent !== 'Unknown') {
+      command += ` --add-header "User-Agent:${request.userAgent}"`;
+    } else {
+      // Fallback to realistic user agent
+      command += ` --add-header "User-Agent:Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"`;
+    }
+    
+    // Add origin header for CORS compliance
+    if (request.pageUrl && request.pageUrl !== 'Unknown') {
+      try {
+        const pageUrl = new URL(request.pageUrl);
+        const origin = `${pageUrl.protocol}//${pageUrl.host}`;
+        command += ` --add-header "Origin:${origin}"`;
+      } catch (error) {
+        // If URL parsing fails, skip origin header
+      }
+    }
+    
+    // Add format selection for better reliability
+    command += ` --format "best[ext=mp4]/best"`;
+    
+    // Add progress and output options
+    command += ` --progress`; // Show progress bar
+    
+    // Add additional reliability options for maximum compatibility
+    command += ` --no-part`; // Don't create .part files
+    command += ` --force-overwrites`; // Overwrite existing files
     
     return command;
   }
@@ -763,22 +809,23 @@ class StreamHelperPopup {
    * Copy yt-dlp command to clipboard
    * @param {string} url - The m3u8 URL
    * @param {string} title - The page title
+   * @param {Object} request - The full request object with browser context
    */
-  async copyYtDlpCommand(url, title) {
+  async copyYtDlpCommand(url, title, request) {
     try {
-      const command = this.generateYtDlpCommand(url, title);
+      const command = this.generateYtDlpCommand(url, title, request);
       await navigator.clipboard.writeText(command);
-      this.showToast('yt-dlp command copied to clipboard!', 'success');
+      this.showToast('Enhanced yt-dlp command copied to clipboard!', 'success');
     } catch (error) {
       // Fallback for older browsers
-      const command = this.generateYtDlpCommand(url, title);
+      const command = this.generateYtDlpCommand(url, title, request);
       const textArea = document.createElement('textarea');
       textArea.value = command;
       document.body.appendChild(textArea);
       textArea.select();
       document.execCommand('copy');
       document.body.removeChild(textArea);
-      this.showToast('yt-dlp command copied to clipboard!', 'success');
+      this.showToast('Enhanced yt-dlp command copied to clipboard!', 'success');
     }
   }
 

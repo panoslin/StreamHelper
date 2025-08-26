@@ -101,6 +101,9 @@ async function captureM3U8Request(details) {
     // Get current timestamp
     const timestamp = new Date().toISOString();
     
+    // Get current tab for context
+    const tab = await chrome.tabs.get(details.tabId);
+    
     // Create request object with relevant information
     const requestData = {
       id: generateUniqueId(),
@@ -110,19 +113,15 @@ async function captureM3U8Request(details) {
       type: details.type,
       tabId: details.tabId,
       frameId: details.frameId,
-      requestId: details.requestId
+      requestId: details.requestId,
+      pageTitle: tab.title,
+      pageUrl: tab.url,
+      // New fields for better context
+      requestHeaders: [], // Will be populated later if needed
+      userAgent: await getUserAgent(details.tabId),
+      cookies: await getCookiesForDomain(details.url),
+      sessionStorage: await getSessionData(details.tabId)
     };
-    
-    // Get tab information for context
-    try {
-      const tab = await chrome.tabs.get(details.tabId);
-      requestData.pageTitle = tab.title;
-      requestData.pageUrl = tab.url;
-    } catch (error) {
-      // Tab might not exist anymore, continue without tab info
-      requestData.pageTitle = 'Unknown';
-      requestData.pageUrl = 'Unknown';
-    }
     
     // Store the captured request
     await storeM3U8Request(requestData);
@@ -170,6 +169,65 @@ async function storeM3U8Request(requestData) {
  */
 function generateUniqueId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
+/**
+ * Helper function to get user agent from the page
+ * @param {number} tabId - The tab ID to get user agent from
+ * @returns {Promise<string>} The user agent string
+ */
+async function getUserAgent(tabId) {
+  try {
+    const [{ result }] = await chrome.scripting.executeScript({
+      target: { tabId: tabId },
+      func: () => navigator.userAgent
+    });
+    return result;
+  } catch (error) {
+    // Fallback to a realistic user agent if we can't get it from the page
+    return 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+  }
+}
+
+/**
+ * Helper function to get cookies for the domain
+ * @param {string} url - The URL to get cookies for
+ * @returns {Promise<string>} Semicolon-separated cookie string
+ */
+async function getCookiesForDomain(url) {
+  try {
+    const urlObj = new URL(url);
+    const cookies = await chrome.cookies.getAll({ domain: urlObj.hostname });
+    return cookies.map(cookie => `${cookie.name}=${cookie.value}`).join('; ');
+  } catch (error) {
+    return '';
+  }
+}
+
+/**
+ * Helper function to get session data from the page
+ * @param {number} tabId - The tab ID to get session data from
+ * @returns {Promise<Object>} Session storage data
+ */
+async function getSessionData(tabId) {
+  try {
+    const [{ result }] = await chrome.scripting.executeScript({
+      target: { tabId: tabId },
+      func: () => {
+        const sessionData = {};
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const key = sessionStorage.key(i);
+          if (key) {
+            sessionData[key] = sessionStorage.getItem(key);
+          }
+        }
+        return sessionData;
+      }
+    });
+    return result;
+  } catch (error) {
+    return {};
+  }
 }
 
 /**

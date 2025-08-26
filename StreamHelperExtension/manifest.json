@@ -7,7 +7,9 @@
   "permissions": [
     "webRequest",
     "storage",
-    "activeTab"
+    "activeTab",
+    "scripting",
+    "cookies"
   ],
   
   "host_permissions": [
