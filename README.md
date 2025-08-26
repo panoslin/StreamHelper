@@ -6,7 +6,8 @@ A modern, clean Chrome extension that captures m3u8 streaming requests from web 
 
 - **Real-time M3U8 Capture**: Automatically captures all m3u8 requests as you browse
 - **Modern UI**: Clean, Material Design-inspired interface
-- **Smart URL Display**: Truncates long URLs for better readability with full URL on hover
+- **Smart URL Display**: Shows hostname and path without parameters for cleaner display
+- **Request Size Tracking**: Displays file sizes from response headers with total size summary
 - **Search & Filter**: Quickly find specific requests
 - **One-click Copy**: Copy any m3u8 URL to clipboard
 - **yt-dlp Integration**: Generate and copy yt-dlp download commands

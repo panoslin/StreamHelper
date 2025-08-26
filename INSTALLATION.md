@@ -19,7 +19,8 @@
 
 - **Real-time M3U8 capture** from all websites
 - **Modern, clean interface** with Material Design
-- **Smart URL display** with truncation and full URL viewing
+- **Smart URL display** showing hostname and path (no parameters)
+- **Request size tracking** from network response headers
 - **Search & filter** captured requests
 - **One-click URL copying** to clipboard
 - **yt-dlp integration** for easy download commands

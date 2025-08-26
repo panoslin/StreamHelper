@@ -67,6 +67,8 @@ class StreamHelperPopup {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (message.type === 'NEW_M3U8_REQUEST') {
         this.handleNewRequest(message.data);
+      } else if (message.type === 'M3U8_REQUEST_SIZE_UPDATE') {
+        this.handleSizeUpdate(message.data);
       }
     });
 
@@ -129,6 +131,32 @@ class StreamHelperPopup {
   }
 
   /**
+   * Handle m3u8 request size updates
+   * @param {Object} sizeData - The size update data
+   */
+  handleSizeUpdate(sizeData) {
+    // Find and update the existing request
+    const requestIndex = this.requests.findIndex(req => req.id === sizeData.id);
+    if (requestIndex !== -1) {
+      this.requests[requestIndex].size = sizeData.size;
+      this.requests[requestIndex].sizeFormatted = sizeData.sizeFormatted;
+      
+      // Update filtered requests if they exist
+      const filteredIndex = this.filteredRequests.findIndex(req => req.id === sizeData.id);
+      if (filteredIndex !== -1) {
+        this.filteredRequests[filteredIndex].size = sizeData.size;
+        this.filteredRequests[filteredIndex].sizeFormatted = sizeData.sizeFormatted;
+      }
+      
+      // Update the display for this specific request
+      this.updateRequestSizeDisplay(sizeData.id, sizeData.sizeFormatted);
+      
+      // Update total size display
+      this.updateTotalSize();
+    }
+  }
+
+  /**
    * Render the requests list in the UI
    */
   renderRequests() {
@@ -185,6 +213,16 @@ class StreamHelperPopup {
     // Set request time
     const timeElement = requestItem.querySelector('.request-time');
     timeElement.textContent = this.formatTime(request.timestamp);
+
+    // Set request size
+    const sizeElement = requestItem.querySelector('.request-size');
+    if (request.sizeFormatted) {
+      sizeElement.textContent = request.sizeFormatted;
+      sizeElement.title = `File size: ${request.sizeFormatted}`;
+    } else {
+      sizeElement.textContent = 'Loading...';
+      sizeElement.title = 'Size information loading from response headers';
+    }
 
     // Set request URL (truncated for display)
     const urlElement = requestItem.querySelector('.request-url');
@@ -356,6 +394,7 @@ class StreamHelperPopup {
       const exportData = {
         exportDate: new Date().toISOString(),
         totalRequests: this.requests.length,
+        totalSize: this.calculateTotalSize(),
         requests: this.requests
       };
 
@@ -416,6 +455,45 @@ class StreamHelperPopup {
     } else {
       countElement.textContent = `${count} of ${total} request${total !== 1 ? 's' : ''}`;
     }
+    
+    // Also update total size
+    this.updateTotalSize();
+  }
+
+  /**
+   * Update the total size display
+   */
+  updateTotalSize() {
+    const totalSizeElement = document.getElementById('totalSize');
+    const totalSize = this.calculateTotalSize();
+    totalSizeElement.textContent = totalSize;
+  }
+
+  /**
+   * Calculate total size of all requests
+   * @returns {string} Formatted total size
+   */
+  calculateTotalSize() {
+    const totalBytes = this.requests.reduce((total, request) => {
+      return total + (request.size || 0);
+    }, 0);
+    
+    return this.formatFileSize(totalBytes);
+  }
+
+  /**
+   * Format file size in human-readable format
+   * @param {number} bytes - Size in bytes
+   * @returns {string} Formatted size string
+   */
+  formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 
   /**
@@ -425,6 +503,22 @@ class StreamHelperPopup {
   updateStatus(status) {
     const statusElement = document.getElementById('status');
     statusElement.textContent = status;
+  }
+
+  /**
+   * Update the size display for a specific request
+   * @param {string} requestId - The ID of the request to update
+   * @param {string} sizeFormatted - The formatted size string
+   */
+  updateRequestSizeDisplay(requestId, sizeFormatted) {
+    const requestElement = document.querySelector(`[data-id="${requestId}"]`);
+    if (requestElement) {
+      const sizeElement = requestElement.querySelector('.request-size');
+      if (sizeElement) {
+        sizeElement.textContent = sizeFormatted || 'Unknown';
+        sizeElement.title = `File size: ${sizeFormatted || 'Unknown'}`;
+      }
+    }
   }
 
   /**
@@ -496,34 +590,32 @@ class StreamHelperPopup {
 
   /**
    * Truncate URL for better display in popup
+   * Shows hostname + path without parameters for cleaner display
    * @param {string} url - The full URL to truncate
-   * @param {number} maxLength - Maximum length before truncation
-   * @returns {string} Truncated URL with ellipsis
+   * @returns {string} Truncated URL without parameters
    */
-  truncateUrl(url, maxLength = 80) {
-    if (url.length <= maxLength) {
-      return url;
-    }
-    
-    // Try to keep the domain and filename visible
+  truncateUrl(url) {
     try {
       const urlObj = new URL(url);
-      const domain = urlObj.hostname;
+      const hostname = urlObj.hostname;
       const pathname = urlObj.pathname;
-      const filename = pathname.split('/').pop();
       
-      if (filename && filename.length > 20) {
-        // If filename is long, show domain + truncated filename
-        const truncatedFilename = filename.substring(0, 20) + '...';
-        return `${domain}${pathname.substring(0, pathname.lastIndexOf('/') + 1)}${truncatedFilename}`;
-      } else {
-        // Show domain + beginning of path + ellipsis
-        const pathStart = pathname.substring(0, Math.max(0, maxLength - domain.length - 10));
-        return `${domain}${pathStart}...`;
-      }
+      // Return hostname + path without query parameters or hash
+      return `${hostname}${pathname}`;
     } catch (error) {
-      // Fallback: simple truncation
-      return url.substring(0, maxLength - 3) + '...';
+      // Fallback: try to remove parameters manually
+      const questionMarkIndex = url.indexOf('?');
+      const hashIndex = url.indexOf('#');
+      
+      let endIndex = url.length;
+      if (questionMarkIndex !== -1) {
+        endIndex = Math.min(endIndex, questionMarkIndex);
+      }
+      if (hashIndex !== -1) {
+        endIndex = Math.min(endIndex, hashIndex);
+      }
+      
+      return url.substring(0, endIndex);
     }
   }
 
