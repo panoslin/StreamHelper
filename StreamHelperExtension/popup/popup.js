@@ -78,6 +78,18 @@ class StreamHelperPopup {
         this.handleSizeUpdate(message.data);
       } else if (message.type === 'TAB_CHANGED') {
         this.handleTabChange(message.data.tabId);
+      } else if (message.type === 'WEBSOCKET_CONNECTION_STATUS') {
+        this.updateConnectionStatus(message.data.connected);
+      } else if (message.type === 'STREAM_ENQUEUED_NOTIFICATION') {
+        this.showToast('Stream queued for download in StreamHelper!', 'success');
+      } else if (message.type === 'DOWNLOAD_PROGRESS_NOTIFICATION') {
+        this.showToast('Download in progress...', 'info');
+      } else if (message.type === 'DOWNLOAD_COMPLETED_NOTIFICATION') {
+        this.showToast('Download completed in StreamHelper!', 'success');
+      } else if (message.type === 'DOWNLOAD_FAILED_NOTIFICATION') {
+        this.showToast('Download failed in StreamHelper', 'error');
+      } else if (message.type === 'WEBSOCKET_ERROR_NOTIFICATION') {
+        this.showToast('Error communicating with StreamHelper', 'error');
       }
     });
 
@@ -376,6 +388,12 @@ class StreamHelperPopup {
     const ytdlpBtn = requestItem.querySelector('.ytdlp-btn');
     ytdlpBtn.addEventListener('click', () => {
       this.copyYtDlpCommand(request.url, request.pageTitle, request);
+    });
+
+    // Set up StreamHelper button
+    const streamhelperBtn = requestItem.querySelector('.streamhelper-btn');
+    streamhelperBtn.addEventListener('click', () => {
+      this.downloadToStreamHelper(request);
     });
 
     // Set up delete button
@@ -826,6 +844,54 @@ class StreamHelperPopup {
       document.execCommand('copy');
       document.body.removeChild(textArea);
       this.showToast('Enhanced yt-dlp command copied to clipboard!', 'success');
+    }
+  }
+
+  /**
+   * Download stream to StreamHelper desktop app
+   * @param {Object} request - The request object to download
+   */
+  async downloadToStreamHelper(request) {
+    try {
+      // Send message to background script to forward to StreamHelper
+      const response = await this.sendMessageToBackground({
+        type: 'DOWNLOAD_TO_STREAMHELPER',
+        data: {
+          url: request.url,
+          pageTitle: request.pageTitle,
+          timestamp: Date.now(),
+          tabId: request.tabId,
+          pageUrl: request.pageUrl
+        }
+      });
+
+      if (response && response.success) {
+        this.showToast('Stream sent to StreamHelper for download!', 'success');
+      } else {
+        throw new Error('Failed to send to StreamHelper');
+      }
+    } catch (error) {
+      console.error('Error sending to StreamHelper:', error);
+      this.showToast('Error sending to StreamHelper. Is the desktop app running?', 'error');
+    }
+  }
+
+  /**
+   * Update connection status display
+   * @param {boolean} connected - Whether connected to StreamHelper
+   */
+  updateConnectionStatus(connected) {
+    const indicator = document.getElementById('connectionIndicator');
+    const text = document.getElementById('connectionText');
+    
+    if (connected) {
+      indicator.classList.add('connected');
+      text.classList.add('connected');
+      text.textContent = 'Connected';
+    } else {
+      indicator.classList.remove('connected');
+      text.classList.remove('connected');
+      text.textContent = 'Disconnected';
     }
   }
 

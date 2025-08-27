@@ -4,6 +4,8 @@
  * This service worker runs in the background and intercepts all network requests
  * to capture m3u8 streaming URLs. It maintains a list of captured requests
  * and provides them to the popup interface.
+ * 
+ * NEW: Now includes WebSocket communication with StreamHelper desktop app
  */
 
 // Storage key for captured m3u8 requests
@@ -15,6 +17,17 @@ const ACTIVE_TAB_KEY = 'active_tab_id';
 // Storage key for request ID mapping (for better size matching)
 const REQUEST_ID_MAP_KEY = 'm3u8_request_id_map';
 
+// WebSocket connection to StreamHelper desktop app
+const WEBSOCKET_CONFIG = {
+  url: 'ws://localhost:8080',
+  reconnectInterval: 5000,
+  maxReconnectAttempts: 10
+};
+
+let websocket = null;
+let reconnectAttempts = 0;
+let isConnected = false;
+
 // Maximum number of requests to store (to prevent memory issues)
 const MAX_REQUESTS = 1000;
 
@@ -25,7 +38,148 @@ chrome.runtime.onInstalled.addListener(() => {
   console.log('StreamHelper extension installed');
   // Initialize storage with empty array
   chrome.storage.local.set({ [STORAGE_KEY]: [] });
+  
+  // Initialize WebSocket connection
+  initializeWebSocket();
 });
+
+/**
+ * Handle incoming WebSocket messages from StreamHelper desktop app
+ * @param {Object} message - The received message
+ */
+function handleWebSocketMessage(message) {
+  console.log('📥 WebSocket message received:', message.type);
+  
+  switch (message.type) {
+    case 'STREAM_ENQUEUED':
+      console.log('✅ Stream enqueued for download:', message.data);
+      // Could show notification to user
+      break;
+      
+    case 'DOWNLOAD_PROGRESS':
+      console.log('📊 Download progress update:', message.data);
+      // Could update UI with download progress
+      break;
+      
+    case 'DOWNLOAD_COMPLETED':
+      console.log('🎉 Download completed:', message.data);
+      // Could show success notification
+      break;
+      
+    case 'DOWNLOAD_FAILED':
+      console.log('❌ Download failed:', message.data);
+      // Could show error notification
+      break;
+      
+    case 'ERROR':
+      console.error('❌ Error from StreamHelper app:', message.data);
+      break;
+      
+    default:
+      console.log('⚠️ Unknown WebSocket message type:', message.type);
+  }
+}
+
+/**
+ * Send message to StreamHelper desktop app via WebSocket
+ * @param {Object} message - The message to send
+ * @returns {boolean} Whether message was sent successfully
+ */
+function sendWebSocketMessage(message) {
+  if (websocket && isConnected && websocket.readyState === WebSocket.OPEN) {
+    try {
+      websocket.send(JSON.stringify(message));
+      console.log('📤 WebSocket message sent:', message.type);
+      return true;
+    } catch (error) {
+      console.error('Error sending WebSocket message:', error);
+      return false;
+    }
+  } else {
+    console.log('⚠️ WebSocket not connected, message not sent:', message.type);
+    return false;
+  }
+}
+
+/**
+ * Initialize WebSocket connection to StreamHelper desktop app
+ */
+function initializeWebSocket() {
+  try {
+    websocket = new WebSocket(WEBSOCKET_CONFIG.url);
+    
+    websocket.onopen = () => {
+      console.log('✅ WebSocket connected to StreamHelper desktop app');
+      isConnected = true;
+      reconnectAttempts = 0;
+      
+      // Notify popup about connection status
+      notifyPopupAboutConnection(true);
+      
+      // Send connection established message
+      sendWebSocketMessage({
+        type: 'CONNECTION_ESTABLISHED',
+        data: { 
+          message: 'Chrome extension connected',
+          timestamp: Date.now(),
+          userAgent: navigator.userAgent
+        }
+      });
+    };
+    
+    websocket.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        handleWebSocketMessage(message);
+      } catch (error) {
+        console.error('Error parsing WebSocket message:', error);
+      }
+    };
+    
+    websocket.onclose = (event) => {
+      console.log('❌ WebSocket disconnected from StreamHelper desktop app:', event.code, event.reason);
+      isConnected = false;
+      
+      // Attempt to reconnect
+      if (reconnectAttempts < WEBSOCKET_CONFIG.maxReconnectAttempts) {
+        setTimeout(() => {
+          reconnectAttempts++;
+          console.log(`🔄 Attempting to reconnect (${reconnectAttempts}/${WEBSOCKET_CONFIG.maxReconnectAttempts})...`);
+          initializeWebSocket();
+        }, WEBSOCKET_CONFIG.reconnectInterval);
+      } else {
+        console.error('❌ Max reconnection attempts reached');
+      }
+    };
+    
+    websocket.onerror = (error) => {
+      console.error('❌ WebSocket error:', error);
+      isConnected = false;
+    };
+    
+  } catch (error) {
+    console.error('Error initializing WebSocket:', error);
+  }
+}
+
+// Add a delay before initial connection attempt
+setTimeout(() => {
+  console.log('🔄 Delayed WebSocket connection attempt...');
+  initializeWebSocket();
+}, 2000); // Wait 2 seconds for desktop app to be ready
+
+/**
+ * Notify popup about connection status change
+ * @param {boolean} connected - Whether connected to StreamHelper
+ */
+function notifyPopupAboutConnection(connected) {
+  chrome.runtime.sendMessage({
+    type: 'WEBSOCKET_CONNECTION_STATUS',
+    data: { connected }
+  }).catch(() => {
+    // Ignore errors when no listeners are available
+  });
+}
 
 /**
  * Track active tab changes
@@ -131,6 +285,18 @@ async function captureM3U8Request(details) {
     
     // Notify any listening popups about the new request
     notifyPopupAboutNewRequest(requestData);
+    
+    // Send to StreamHelper desktop app via WebSocket
+    sendWebSocketMessage({
+      type: 'STREAM_CAPTURED',
+      data: {
+        url: details.url,
+        pageTitle: tab.title,
+        timestamp: Date.now(),
+        tabId: details.tabId,
+        pageUrl: tab.url
+      }
+    });
     
   } catch (error) {
     console.error('Error capturing m3u8 request:', error);
@@ -317,6 +483,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case 'DELETE_M3U8_REQUEST':
       // Delete specific request by ID
       deleteM3U8Request(message.requestId, sendResponse);
+      return true;
+      
+    case 'DOWNLOAD_TO_STREAMHELPER':
+      // Forward download request to StreamHelper desktop app
+      downloadToStreamHelper(message.data, sendResponse);
       return true;
       
     default:
@@ -527,6 +698,35 @@ async function getRequestsByTabId(tabId, sendResponse) {
   } catch (error) {
     console.error('Error getting requests by tab ID:', error);
     sendResponse({ requests: [], error: error.message });
+  }
+}
+
+/**
+ * Download stream to StreamHelper desktop app
+ * @param {Object} streamData - Stream data to send to StreamHelper
+ * @param {Function} sendResponse - Callback to send response
+ */
+async function downloadToStreamHelper(streamData, sendResponse) {
+  try {
+    if (!isConnected || !websocket) {
+      sendResponse({ success: false, error: 'Not connected to StreamHelper desktop app' });
+      return;
+    }
+
+    // Send stream capture message to StreamHelper
+    const success = sendWebSocketMessage({
+      type: 'STREAM_CAPTURED',
+      data: streamData
+    });
+
+    if (success) {
+      sendResponse({ success: true, message: 'Stream sent to StreamHelper' });
+    } else {
+      sendResponse({ success: false, error: 'Failed to send to StreamHelper' });
+    }
+  } catch (error) {
+    console.error('Error downloading to StreamHelper:', error);
+    sendResponse({ success: false, error: error.message });
   }
 }
 
