@@ -159,9 +159,47 @@ import { Subscription } from 'rxjs';
                   (onClick)="retryDownload(download.id)"
                   tooltip="Retry Download">
                 </p-button>
+                <p-button 
+                  icon="pi pi-trash" 
+                  [text]="true" 
+                  size="small"
+                  (onClick)="removeFailedDownload(download.id)"
+                  tooltip="Remove Failed Download"
+                  styleClass="p-button-danger">
+                </p-button>
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Connection Status -->
+        <div class="connection-status">
+          <p-card>
+            <ng-template pTemplate="header">
+              <div class="status-header">
+                <i class="pi pi-wifi status-icon"></i>
+                <span>Connection Status</span>
+              </div>
+            </ng-template>
+            <ng-template pTemplate="content">
+              <div class="status-content">
+                <div class="status-item">
+                  <span class="status-label">WebSocket Server:</span>
+                  <span class="status-value" [class]="websocketStatus.isRunning ? 'status-online' : 'status-offline'">
+                    {{ websocketStatus.isRunning ? 'Running' : 'Stopped' }}
+                  </span>
+                </div>
+                <div class="status-item">
+                  <span class="status-label">Connected Clients:</span>
+                  <span class="status-value">{{ websocketStatus.connectedClients }}</span>
+                </div>
+                <div class="status-item">
+                  <span class="status-label">Port:</span>
+                  <span class="status-value">{{ websocketStatus.port }}</span>
+                </div>
+              </div>
+            </ng-template>
+          </p-card>
         </div>
 
         <!-- Empty State -->
@@ -341,10 +379,69 @@ import { Subscription } from 'rxjs';
     .download-error-details strong {
       color: var(--red-800);
     }
+
+    .connection-status {
+      margin-top: 2rem;
+      padding: 1rem;
+      background: var(--surface-card);
+      border-radius: 8px;
+      border: 1px solid var(--surface-border);
+    }
+
+    .status-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      color: var(--text-color);
+    }
+
+    .status-header .status-icon {
+      font-size: 1.25rem;
+      color: var(--blue-500);
+    }
+
+    .status-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .status-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.875rem;
+      color: var(--text-color-secondary);
+    }
+
+    .status-label {
+      font-weight: 500;
+      color: var(--text-color);
+    }
+
+    .status-value {
+      font-weight: 600;
+      color: var(--text-color);
+    }
+
+    .status-online {
+      color: var(--green-600);
+    }
+
+    .status-offline {
+      color: var(--red-600);
+    }
   `]
 })
 export class DownloadsComponent implements OnInit, OnDestroy {
   downloads: DownloadItem[] = [];
+  websocketStatus = {
+    isRunning: false,
+    connectedClients: 0,
+    port: 0
+  };
+  
   private subscriptions: Subscription[] = [];
 
   constructor(
@@ -367,6 +464,8 @@ export class DownloadsComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       })
     );
+
+    this.loadWebSocketStatus();
   }
 
   ngOnDestroy(): void {
@@ -430,6 +529,19 @@ export class DownloadsComponent implements OnInit, OnDestroy {
   async retryDownload(downloadId: string): Promise<void> {
     // For now, we'll just show a message that retry is not implemented
     this.toastService.showInfo('Retry functionality coming soon', 'Downloads');
+  }
+
+  async removeFailedDownload(downloadId: string): Promise<void> {
+    // For now, we'll just show a message that removal is not implemented
+    this.toastService.showInfo('Remove functionality coming soon', 'Downloads');
+  }
+
+  private async loadWebSocketStatus(): Promise<void> {
+    try {
+      this.websocketStatus = await (window as any).electronAPI.getWebSocketStatus();
+    } catch (error) {
+      console.error('Failed to load WebSocket status:', error);
+    }
   }
 
   openDownloadFolder(outputPath?: string): void {
