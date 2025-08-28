@@ -28,13 +28,6 @@ import { Router } from '@angular/router';
         <div class="nav-content">
           <button 
             class="nav-button"
-            [class.active]="isActiveRoute('/dashboard')"
-            (click)="navigateTo('/dashboard')">
-            <i class="pi pi-home"></i>
-            <span>Dashboard</span>
-          </button>
-          <button 
-            class="nav-button"
             [class.active]="isActiveRoute('/downloads')"
             (click)="navigateTo('/downloads')">
             <i class="pi pi-download"></i>
