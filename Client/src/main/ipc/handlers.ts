@@ -1,0 +1,143 @@
+import { ipcMain, BrowserWindow } from 'electron';
+import { IPC_CHANNELS } from '../../shared/constants';
+import { configManager } from '../config/manager';
+import { downloadManager } from '../download/manager';
+import { webSocketManager } from '../communication/websocket';
+import { logger } from '../utils/logger';
+
+export class IPCHandlers {
+  private mainWindow: BrowserWindow | null = null;
+
+  constructor() {
+    this.setupHandlers();
+  }
+
+  setMainWindow(window: BrowserWindow): void {
+    this.mainWindow = window;
+  }
+
+  private setupHandlers(): void {
+    // Configuration handlers
+    ipcMain.handle(IPC_CHANNELS.GET_CONFIG, () => {
+      return configManager.getConfig();
+    });
+
+    ipcMain.handle(IPC_CHANNELS.UPDATE_CONFIG, (event, updates: any) => {
+      configManager.updateConfig(updates);
+      return { success: true };
+    });
+
+    // Download handlers
+    ipcMain.handle(IPC_CHANNELS.GET_DOWNLOADS, () => {
+      return downloadManager.getDownloads();
+    });
+
+    ipcMain.handle(IPC_CHANNELS.PAUSE_DOWNLOAD, (event, downloadId: string) => {
+      const success = downloadManager.pauseDownload(downloadId);
+      if (success) {
+        this.sendToRenderer(IPC_CHANNELS.DOWNLOAD_PROGRESS, {
+          id: downloadId,
+          status: 'paused'
+        });
+      }
+      return { success };
+    });
+
+    ipcMain.handle(IPC_CHANNELS.RESUME_DOWNLOAD, (event, downloadId: string) => {
+      const success = downloadManager.resumeDownload(downloadId);
+      if (success) {
+        this.sendToRenderer(IPC_CHANNELS.DOWNLOAD_PROGRESS, {
+          id: downloadId,
+          status: 'downloading'
+        });
+      }
+      return { success };
+    });
+
+    ipcMain.handle(IPC_CHANNELS.CANCEL_DOWNLOAD, (event, downloadId: string) => {
+      const success = downloadManager.cancelDownload(downloadId);
+      if (success) {
+        this.sendToRenderer(IPC_CHANNELS.DOWNLOAD_FAILED, {
+          id: downloadId,
+          error: 'Download cancelled by user'
+        });
+      }
+      return { success };
+    });
+
+    // Stream handlers
+    ipcMain.on(IPC_CHANNELS.NEW_STREAM, (event, streamData: any) => {
+      this.sendToRenderer(IPC_CHANNELS.STREAM_UPDATE, streamData);
+    });
+
+    // WebSocket status
+    ipcMain.handle('get-websocket-status', () => {
+      return {
+        isRunning: webSocketManager.isRunning(),
+        connectedClients: webSocketManager.getConnectedClientsCount(),
+        port: configManager.get('webSocketPort')
+      };
+    });
+
+    // Clear completed downloads
+    ipcMain.handle('clear-completed-downloads', () => {
+      downloadManager.clearCompleted();
+      return { success: true };
+    });
+
+    // Open downloads folder
+    ipcMain.handle('open-downloads-folder', () => {
+      try {
+        const downloadDir = configManager.get('defaultDownloadDir');
+        const { shell } = require('electron');
+        
+        // Expand the ~ to the actual home directory
+        const expandedPath = downloadDir.replace(/^~/, require('os').homedir());
+        
+        // Open the folder in the system's default file manager
+        shell.openPath(expandedPath);
+        
+        return { success: true, path: expandedPath };
+      } catch (error) {
+        logger.error('Failed to open downloads folder', { error });
+        return { success: false, error: (error as Error).message };
+      }
+    });
+
+    logger.info('IPC handlers setup completed');
+  }
+
+  private sendToRenderer(channel: string, data: any): void {
+    if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+      this.mainWindow.webContents.send(channel, data);
+    }
+  }
+
+  // Method to send download progress updates
+  sendDownloadProgress(progress: any): void {
+    this.sendToRenderer(IPC_CHANNELS.DOWNLOAD_PROGRESS, progress);
+  }
+
+  // Method to send download completion
+  sendDownloadCompleted(downloadId: string, outputPath?: string): void {
+    this.sendToRenderer(IPC_CHANNELS.DOWNLOAD_COMPLETED, {
+      id: downloadId,
+      outputPath
+    });
+  }
+
+  // Method to send download failure
+  sendDownloadFailed(downloadId: string, error: string): void {
+    this.sendToRenderer(IPC_CHANNELS.DOWNLOAD_FAILED, {
+      id: downloadId,
+      error
+    });
+  }
+
+  // Method to send new stream notification
+  sendNewStream(stream: any): void {
+    this.sendToRenderer(IPC_CHANNELS.STREAM_UPDATE, stream);
+  }
+}
+
+export const ipcHandlers = new IPCHandlers();

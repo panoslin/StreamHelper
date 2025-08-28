@@ -1,0 +1,71 @@
+{
+  "name": "streamhelper-client",
+  "version": "1.0.0",
+  "description": "Desktop application for managing stream downloads from Chrome extension using yt-dlp",
+  "main": "dist/main/main/main.js",
+  "scripts": {
+    "build": "tsc && npm run build:renderer",
+    "build:renderer": "ng build --configuration production",
+    "build:main": "tsc -p tsconfig.main.json",
+    "start": "npm run build && electron .",
+    "start:dev": "concurrently \"npm run build:watch\" \"npm run electron:dev\"",
+    "start:all": "concurrently \"npm run build:watch\" \"npm run electron:dev\" \"npm run serve:renderer\"",
+    "build:watch": "tsc -w -p tsconfig.main.json",
+    "electron:dev": "wait-on dist/main/main/main.js && electron .",
+    "serve:renderer": "ng serve --port 4200",
+    "electron:debug": "npm run build && electron --inspect=5858 .",
+    "package:current": "electron-builder",
+    "package:all": "electron-builder -mwl",
+    "build:app": "./scripts/build-app.sh",
+    "update-binaries": "node scripts/update-binaries.js"
+  },
+  "keywords": ["electron", "angular", "streaming", "downloads", "yt-dlp"],
+  "author": "StreamHelper Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@angular-devkit/build-angular": "^16.0.0",
+    "@angular/cli": "^16.0.0",
+    "@angular/compiler-cli": "^16.0.0",
+    "@types/node": "^20.0.0",
+    "concurrently": "^8.0.0",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.0.0",
+    "typescript": "^5.0.0",
+    "wait-on": "^7.0.0"
+  },
+  "dependencies": {
+    "@angular/animations": "^16.0.0",
+    "@angular/common": "^16.0.0",
+    "@angular/compiler": "^16.0.0",
+    "@angular/core": "^16.0.0",
+    "@angular/forms": "^16.0.0",
+    "@angular/platform-browser": "^16.0.0",
+    "@angular/platform-browser-dynamic": "^16.0.0",
+    "@angular/router": "^16.0.0",
+    "primeng": "^16.0.0",
+    "primeicons": "^6.0.0",
+    "rxjs": "^7.0.0",
+    "ws": "^8.0.0"
+  },
+  "build": {
+    "appId": "com.streamhelper.client",
+    "productName": "StreamHelper Client",
+    "directories": {
+      "output": "dist-packages"
+    },
+    "files": [
+      "dist/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.utilities",
+      "target": "dmg"
+    },
+    "win": {
+      "target": "dir"
+    },
+    "linux": {
+      "target": "dir"
+    },
+    "asar": false
+  }
+}
