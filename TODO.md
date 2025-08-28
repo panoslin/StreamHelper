@@ -94,9 +94,11 @@ Implement a client application that can communicate with the StreamHelper Chrome
 ### 2.4 yt-dlp Integration Strategy
 - [ ] **Binary execution approach (recommended)**
   - [ ] Bundle yt-dlp binaries for each platform (win32, darwin, linux)
+  - [ ] **Download latest yt-dlp binaries** from [GitHub releases](https://github.com/yt-dlp/yt-dlp/releases/tag/2025.08.22)
   - [ ] Implement platform detection and binary path resolution
   - [ ] Create binary validation and testing system
   - [ ] Handle binary permissions (executable on Unix-like systems)
+  - [ ] **Version tracking**: Track yt-dlp version and provide update notifications
 
 - [ ] **Alternative approaches**
   - [ ] Python subprocess with virtual environment
@@ -117,14 +119,15 @@ Implement a client application that can communicate with the StreamHelper Chrome
 - [ ] **Choose primary technology**
   - [ ] **Option A**: Electron (JavaScript/Node.js) ⭐ **RECOMMENDED**
     - [ ] Cross-platform desktop app (Windows, macOS, Linux)
-    - [ ] Web technologies for UI (React + TypeScript + Tailwind CSS)
+    - [ ] Web technologies for UI (Angular + PrimeNG + TypeScript)
     - [ ] Easy integration with existing extension (JavaScript-to-JavaScript)
     - [ ] Native yt-dlp binary execution via child_process
     - [ ] Platform-specific binary management (win32, darwin, linux)
     - [ ] Rich npm ecosystem for all features
     - [ ] Built-in WebSocket support for real-time communication
     - [ ] Native system integration (file system, notifications, auto-updates)
-    - [ ] Rapid development and iteration capabilities
+    - [ ] Enterprise-grade architecture with built-in dependency injection
+    - [ ] Professional UI components out-of-the-box with PrimeNG
 
   - [ ] **Option B**: Python with GUI framework
     - [ ] Native Python yt-dlp integration
@@ -145,33 +148,38 @@ Implement a client application that can communicate with the StreamHelper Chrome
   - [ ] **TypeScript**: For type safety and better development experience
 
 - [ ] **UI Framework & Styling**
-  - [ ] **React 18**: Modern UI development with hooks and concurrent features
-  - [ ] **Tailwind CSS**: Utility-first CSS framework for rapid UI development
-  - [ ] **Headless UI**: Accessible UI components
-  - [ ] **Framer Motion**: Smooth animations and transitions
+  - [ ] **Angular 17**: Modern UI development with standalone components and signals
+  - [ ] **PrimeNG**: Professional UI component library with 80+ components
+  - [ ] **PrimeIcons**: Comprehensive icon library
+  - [ ] **Angular CDK**: Accessibility and behavior primitives
+  - [ ] **Angular Animations**: Built-in animation system
 
 - [ ] **State Management & Data**
-  - [ ] **Zustand**: Lightweight state management
-  - [ ] **React Query**: Server state management and caching
+  - [ ] **Angular Services**: Built-in dependency injection and state management
+  - [ ] **RxJS**: Reactive programming and state streams
+  - [ ] **Angular Signals**: Modern reactive state management (Angular 17+)
   - [ ] **Electron Store**: Persistent configuration storage
+  - [ ] **Angular HttpClient**: HTTP communication and interceptors
 
 - [ ] **Communication & Networking**
   - [ ] **WebSocket**: Real-time bidirectional communication with extension
   - [ ] **HTTP Server**: RESTful API endpoints if needed
   - [ ] **Child Process**: yt-dlp execution and management
+  - [ ] **Angular Interceptors**: Request/response handling and authentication
 
 - [ ] **Build & Distribution**
   - [ ] **Electron Builder**: Application packaging and distribution
   - [ ] **Electron Forge**: Automated build process
+  - [ ] **Angular CLI**: Build, serve, and test Angular applications
   - [ ] **TypeScript Compiler**: Type checking and compilation
-  - [ ] **Webpack/Vite**: Module bundling and optimization
+  - [ ] **Webpack**: Module bundling and optimization (via Angular CLI)
 
 - [ ] **Development Tools**
   - [ ] **ESLint + Prettier**: Code quality and formatting
   - [ ] **Husky**: Git hooks for pre-commit checks
-  - [ ] **Jest**: Unit testing framework
+  - [ ] **Jest + Angular Testing**: Unit testing framework
   - [ ] **Electron DevTools**: Main process debugging
-  - [ ] **React DevTools**: UI component debugging
+  - [ ] **Angular DevTools**: UI component debugging and state inspection
 
 ### 3.3 Core Application Development
 - [ ] **Implement main application structure**
@@ -179,25 +187,28 @@ Implement a client application that can communicate with the StreamHelper Chrome
   - [ ] Main window and UI framework
   - [ ] Event handling and routing
   - [ ] Error handling and logging
+  - [ ] Angular service architecture and dependency injection
 
 - [ ] **Implement communication module**
   - [ ] WebSocket/HTTP server setup
   - [ ] Message parsing and validation
   - [ ] Extension connection management
   - [ ] Heartbeat and health monitoring
+  - [ ] Angular interceptors for request/response handling
 
 ### 3.4 User Interface Development
 - [ ] **Create main application window**
-  - [ ] Stream list display
-  - [ ] Download queue management
-  - [ ] Settings panel
-  - [ ] Status and progress indicators
+  - [ ] Stream list display using PrimeNG DataTable
+  - [ ] Download queue management with PrimeNG components
+  - [ ] Settings panel with PrimeNG form components
+  - [ ] Status and progress indicators using PrimeNG ProgressBar and Toast
 
 - [ ] **Implement stream management UI**
-  - [ ] Display captured streams from extension
-  - [ ] Stream metadata display (URL, page title, timestamp)
-  - [ ] Download action buttons
-  - [ ] Stream filtering and search
+  - [ ] Display captured streams from extension using PrimeNG DataTable
+  - [ ] Stream metadata display (URL, page title, timestamp) with PrimeNG Card
+  - [ ] Download action buttons with PrimeNG Button components
+  - [ ] Stream filtering and search using PrimeNG InputText and Dropdown
+  - [ ] Responsive layout with PrimeNG Grid system
 
 ### 3.5 Project Structure and Binary Management
 - [ ] **Set up project structure**
@@ -205,6 +216,7 @@ Implement a client application that can communicate with the StreamHelper Chrome
   - [ ] Organize source code (main, renderer, shared, types)
   - [ ] Set up build configuration (electron-builder)
   - [ ] Configure platform-specific builds
+  - [ ] Angular CLI workspace configuration
 
 - [ ] **Implement binary management system**
   - [ ] Create bin/ directory structure for platform binaries
@@ -213,10 +225,11 @@ Implement a client application that can communicate with the StreamHelper Chrome
   - [ ] Handle binary updates and version management
 
 - [ ] **Set up development environment**
-  - [ ] Configure TypeScript compilation
+  - [ ] Configure TypeScript compilation (Angular CLI + Electron)
   - [ ] Set up ESLint and Prettier rules
   - [ ] Configure build scripts and package.json
-  - [ ] Set up hot reload for development
+  - [ ] Set up hot reload for development (Angular CLI dev server)
+  - [ ] Configure PrimeNG theme and styling
 
 ---
 
@@ -225,14 +238,15 @@ Implement a client application that can communicate with the StreamHelper Chrome
 ### 3.6.1 Core Dependencies
 - [ ] **Install and configure core packages**
   - [ ] **Electron**: v28+ for desktop application framework
-  - [ ] **React**: v18+ for UI development
+  - [ ] **Angular**: v17+ for UI development with standalone components
   - [ ] **TypeScript**: v5+ for type safety
-  - [ ] **Tailwind CSS**: v3+ for styling
+  - [ ] **PrimeNG**: v17+ for professional UI components
+  - [ ] **PrimeIcons**: v6+ for comprehensive icon library
 
 - [ ] **Development dependencies**
   - [ ] **Electron Builder**: For application packaging
   - [ ] **Electron Forge**: For build automation
-  - [ ] **Webpack/Vite**: For module bundling
+  - [ ] **Angular CLI**: For build, serve, and test automation
   - [ ] **ESLint + Prettier**: For code quality
 
 ### 3.6.2 yt-dlp Integration Dependencies
@@ -249,14 +263,16 @@ Implement a client application that can communicate with the StreamHelper Chrome
 
 ### 3.6.3 UI & State Management
 - [ ] **State management**
-  - [ ] **Zustand**: Lightweight state store
-  - [ ] **React Query**: Server state management
+  - [ ] **Angular Services**: Built-in dependency injection and state management
+  - [ ] **RxJS**: Reactive programming and state streams
+  - [ ] **Angular Signals**: Modern reactive state management (Angular 17+)
   - [ ] **Electron Store**: Persistent storage
 
 - [ ] **UI components**
-  - [ ] **Headless UI**: Accessible components
-  - [ ] **Framer Motion**: Animations
-  - [ ] **React Icons**: Icon library
+  - [ ] **PrimeNG**: Professional UI component library (80+ components)
+  - [ ] **PrimeIcons**: Comprehensive icon library
+  - [ ] **Angular CDK**: Accessibility and behavior primitives
+  - [ ] **Angular Animations**: Built-in animation system
 
 ---
 
@@ -271,23 +287,57 @@ streamhelper-client/
 │   │   ├── downloadManager.ts  # yt-dlp integration
 │   │   ├── communication.ts    # WebSocket server
 │   │   └── utils/              # Utility functions
-│   ├── renderer/               # React application
-│   │   ├── App.tsx            # Main application component
-│   │   ├── components/        # React components
-│   │   ├── hooks/             # Custom React hooks
-│   │   ├── stores/            # State management
-│   │   └── types/             # TypeScript definitions
-│   └── shared/                # Shared utilities
-│       ├── constants.ts        # Application constants
-│       ├── types.ts           # Shared type definitions
-│       └── utils.ts           # Shared utility functions
-├── bin/                        # yt-dlp binaries
-│   ├── win32/                 # Windows binaries
-│   ├── darwin/                # macOS binaries
-│   └── linux/                 # Linux binaries
-├── public/                     # Static assets
-├── build/                      # Build configuration
-├── dist/                       # Distribution packages
+│   ├── renderer/               # Angular application
+│   │   ├── app/                # Main application module
+│   │   │   ├── app.component.ts # Main application component
+│   │   │   ├── app.component.html
+│   │   │   ├── app.component.css
+│   │   │   ├── app.module.ts   # Main application module
+│   │   │   └── app.routes.ts   # Application routing
+│   │   ├── components/         # Angular components
+│   │   │   ├── stream-list/    # Stream management component
+│   │   │   ├── download-queue/ # Download queue component
+│   │   │   ├── settings/       # Settings component
+│   │   │   └── shared/         # Shared UI components
+│   │   ├── services/           # Angular services
+│   │   │   ├── stream.service.ts      # Stream management
+│   │   │   ├── download.service.ts    # Download management
+│   │   │   ├── communication.service.ts # WebSocket communication
+│   │   │   └── settings.service.ts    # Configuration management
+│   │   ├── models/             # Data models and interfaces
+│   │   ├── pipes/              # Angular pipes for data transformation
+│   │   └── types/              # TypeScript definitions
+│   └── shared/                 # Shared utilities
+│       ├── constants.ts         # Application constants
+│       ├── types.ts            # Shared type definitions
+│       └── utils.ts            # Shared utility functions
+├── bin/                         # yt-dlp binaries
+│   ├── win32/                  # Windows binaries
+│   │   ├── yt-dlp.exe          # Latest Windows binary
+│   │   └── version.txt         # Version tracking file
+│   ├── darwin/                 # macOS binaries
+│   │   ├── yt-dlp              # Latest macOS binary
+│   │   └── version.txt         # Version tracking file
+│   └── linux/                  # Linux binaries
+│       ├── yt-dlp              # Latest Linux binary
+│       └── version.txt         # Version tracking file
+├── assets/                      # Application assets
+│   ├── images/                 # UI images and icons
+│   │   ├── icons/              # Application icons
+│   │   ├── backgrounds/        # Background images
+│   │   └── ui/                 # UI-specific images
+│   ├── themes/                 # PrimeNG themes
+│   │   ├── light/              # Light theme files
+│   │   └── dark/               # Dark theme files
+│   └── styles/                 # Custom CSS and styling
+├── docs/                        # Documentation
+│   ├── api/                    # API documentation
+│   ├── setup/                  # Setup guides
+│   └── user-guide/             # User documentation
+├── public/                      # Static assets
+├── build/                       # Build configuration
+├── dist/                        # Distribution packages
+├── angular.json                 # Angular CLI configuration
 └── package.json
 ```
 
@@ -295,8 +345,8 @@ streamhelper-client/
 - [ ] **package.json**: Dependencies, scripts, and metadata
 - [ ] **tsconfig.json**: TypeScript configuration
 - [ ] **electron-builder.json**: Build and packaging configuration
-- [ ] **tailwind.config.js**: CSS framework configuration
-- [ ] **webpack.config.js**: Module bundling configuration
+- [ ] **angular.json**: Angular CLI workspace configuration
+- [ ] **prime-ng.config.js**: PrimeNG theme and component configuration
 - [ ] **.eslintrc.js**: Code quality rules
 - [ ] **.prettierrc**: Code formatting rules
 
@@ -313,16 +363,24 @@ streamhelper-client/
   - [ ] `npm run package`: Create distributable packages
   - [ ] `npm run test`: Run test suite
 
-### 3.7.4 Package.json Dependencies
+### 3.7.4 Binary Management & Updates
+- [ ] **yt-dlp Binary Management**
+  - [ ] Download latest binaries from [GitHub releases](https://github.com/yt-dlp/yt-dlp/releases/tag/2025.08.22)
+  - [ ] Implement automatic binary version checking
+  - [ ] Create binary update notification system
+  - [ ] Maintain binary integrity with checksums
+  - [ ] Handle binary permissions and execution rights
+
+### 3.7.5 Package.json Dependencies
 ```json
 {
   "dependencies": {
     "electron": "^28.0.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "angular": "^17.0.0",
+    "primeng": "^17.0.0",
+    "primeicons": "^6.0.0",
+    "rxjs": "^7.8.0",
     "typescript": "^5.0.0",
-    "tailwindcss": "^3.3.0",
-    "zustand": "^4.4.0",
     "ws": "^8.14.0",
     "fs-extra": "^11.1.0",
     "electron-store": "^8.1.0"
@@ -330,11 +388,13 @@ streamhelper-client/
   "devDependencies": {
     "electron-builder": "^24.0.0",
     "electron-forge": "^7.2.0",
-    "webpack": "^5.88.0",
+    "@angular/cli": "^17.0.0",
+    "@angular-devkit/build-angular": "^17.0.0",
     "eslint": "^8.45.0",
     "prettier": "^3.0.0",
     "husky": "^8.0.0",
-    "jest": "^29.5.0"
+    "jest": "^29.5.0",
+    "@types/jest": "^29.5.0"
   }
 }
 ```
@@ -488,13 +548,38 @@ streamhelper-client/
 
 ---
 
-## 🔮 Future Enhancements
+## 📥 yt-dlp Binary Management & Organization
 
-### Advanced Features
-- [ ] **Cloud integration**
-  - [ ] Upload to cloud storage (Google Drive, Dropbox)
-  - [ ] Remote download management
-  - [ ] Cross-device synchronization
+### Binary Download & Setup
+- [ ] **Download Latest yt-dlp Binaries**
+  - [ ] **Windows (win32)**: Download `yt-dlp.exe` from [GitHub releases](https://github.com/yt-dlp/yt-dlp/releases/tag/2025.08.22)
+  - [ ] **macOS (darwin)**: Download `yt-dlp` binary for macOS
+  - [ ] **Linux**: Download `yt-dlp` binary for Linux distributions
+  - [ ] **Version Tracking**: Create `version.txt` files in each platform folder
+
+### Binary Organization Structure
+```
+bin/
+├── win32/
+│   ├── yt-dlp.exe          # Windows executable
+│   └── version.txt          # Contains: 2025.08.22
+├── darwin/
+│   ├── yt-dlp              # macOS executable
+│   └── version.txt          # Contains: 2025.08.22
+└── linux/
+    ├── yt-dlp              # Linux executable
+    └── version.txt          # Contains: 2025.08.22
+```
+
+### Binary Management Features
+- [ ] **Automatic Version Checking**: Compare local version with latest GitHub release
+- [ ] **Update Notifications**: Alert users when new yt-dlp versions are available
+- [ ] **Integrity Verification**: Validate binary checksums and permissions
+- [ ] **Fallback Handling**: Graceful degradation if binaries are missing or corrupted
+
+---
+
+## 🔮 Future Enhancements
 
 - [ ] **Advanced processing**
   - [ ] Video conversion and compression
@@ -575,29 +660,90 @@ streamhelper-client/
 **Team Size**: 2-3 developers recommended
 **Complexity**: Medium to High
 
+## 🏗️ Industry Best Practices for System Design
+
+### 3.8.1 Architecture Principles
+- [ ] **Separation of Concerns**: Clear separation between main process, renderer, and shared modules
+- [ ] **Dependency Injection**: Use Angular's built-in DI container for service management
+- [ ] **Single Responsibility**: Each service/component has one clear purpose
+- [ ] **Interface Segregation**: Define clear contracts between modules
+- [ ] **Open/Closed Principle**: Extend functionality without modifying existing code
+
+### 3.8.2 Security Best Practices
+- [ ] **Input Validation**: Validate all messages from extension and user inputs
+- [ ] **Authentication**: Implement secure communication between extension and client
+- [ ] **File System Security**: Sanitize file paths and restrict access to authorized directories
+- [ ] **Binary Execution**: Validate yt-dlp binary integrity before execution
+- [ ] **Error Handling**: Never expose sensitive information in error messages
+
+### 3.8.3 Performance Best Practices
+- [ ] **Lazy Loading**: Load Angular modules and components on-demand
+- [ ] **Change Detection Strategy**: Use OnPush strategy for performance-critical components
+- [ ] **Memory Management**: Properly dispose of subscriptions and event listeners
+- [ ] **Binary Caching**: Cache yt-dlp binary paths and validation results
+- [ ] **Download Queue Optimization**: Implement intelligent queue management with priority levels
+
+### 3.8.4 Testing Strategy
+- [ ] **Unit Testing**: Test individual services and components in isolation
+- [ ] **Integration Testing**: Test communication between main and renderer processes
+- [ ] **E2E Testing**: Test complete user workflows
+- [ ] **Performance Testing**: Monitor memory usage and download performance
+- [ ] **Cross-Platform Testing**: Test on all target operating systems
+
+### 3.8.5 Error Handling & Resilience
+- [ ] **Graceful Degradation**: App continues working even if some features fail
+- [ ] **Retry Mechanisms**: Implement exponential backoff for failed operations
+- [ ] **Circuit Breaker Pattern**: Prevent cascading failures in download operations
+- [ ] **Comprehensive Logging**: Log all operations for debugging and monitoring
+- [ ] **User Feedback**: Provide clear error messages and recovery suggestions
+
+### 3.8.6 Code Quality & Documentation Standards
+- [ ] **Function Documentation**: Every function must have JSDoc comments explaining its purpose, parameters, and return values
+- [ ] **Inline Comments**: Add brief inline comments for complex logic and business rules
+- [ ] **API Documentation**: Document all service methods and their usage
+- [ ] **Component Documentation**: Document component inputs, outputs, and lifecycle methods
+- [ ] **README Updates**: Keep project documentation current with setup and usage instructions
+
+### 3.8.7 Project Organization & Asset Management
+- [ ] **Structured File Organization**: Organize all project files in logical, hierarchical folders
+- [ ] **Asset Management**: Create dedicated folders for images, icons, and other media files
+- [ ] **Binary Management**: Organize yt-dlp binaries in platform-specific folders with version tracking
+- [ ] **Documentation Structure**: Maintain organized documentation with clear navigation
+- [ ] **Resource Organization**: Organize PrimeNG themes, custom styles, and shared resources
+
+---
+
 ## 🛠️ Implementation Roadmap
 
-### Week 1-2: Foundation
-- [ ] Set up Electron project structure
+### Week 1-2: Foundation & Angular Setup
+- [ ] Set up Electron project structure with Angular CLI
+- [ ] Configure PrimeNG theme and component library
+- [ ] **Download and organize yt-dlp binaries** from [GitHub releases](https://github.com/yt-dlp/yt-dlp/releases/tag/2025.08.22)
 - [ ] Implement platform detection and binary path resolution
 - [ ] Create basic yt-dlp integration with binary execution
 - [ ] Test binary execution on all target platforms
+- [ ] **Set up project folder structure** for assets, documentation, and binaries
 
-### Week 3-4: Core Download Engine
-- [ ] Implement download manager class with queue system
+### Week 3-4: Core Download Engine & Services
+- [ ] Implement download manager service with queue system
+- [ ] Create Angular services for stream and download management
 - [ ] Add progress parsing from yt-dlp output
-- [ ] Create download progress event system
+- [ ] Create download progress event system with RxJS
 - [ ] Implement basic error handling and recovery
 
-### Week 5-6: Communication & UI
+### Week 5-6: Communication & UI Components
 - [ ] Set up WebSocket communication with extension
-- [ ] Build basic UI for stream management
-- [ ] Integrate download progress display
-- [ ] Add download controls (start, pause, cancel)
+- [ ] Build PrimeNG-based UI components for stream management
+- [ ] Implement data tables and progress indicators
+- [ ] Add download controls (start, pause, cancel) with PrimeNG buttons
+- [ ] Create responsive layout with PrimeNG Grid system
 
-### Week 7-8: Polish & Testing
-- [ ] Add advanced download options (quality, format)
-- [ ] Implement settings and configuration
+### Week 7-8: Advanced Features & Polish
+- [ ] Add advanced download options (quality, format) with PrimeNG forms
+- [ ] Implement settings and configuration panel
+- [ ] Add PrimeNG Toast notifications and confirmations
+- [ ] **Complete function documentation** with JSDoc comments for all functions
+- [ ] **Organize project assets** and create comprehensive documentation structure
 - [ ] Comprehensive testing on all platforms
 - [ ] Performance optimization and bug fixes
 

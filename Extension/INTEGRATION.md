@@ -100,21 +100,6 @@ The desktop app will start and listen on WebSocket port 8080.
 - **IPC System**: Communicates with renderer process
 - **UI Components**: Real-time status and progress display
 
-## 🧪 **Testing the Integration**
-
-### **Test Page Features**
-- **Connection Status**: Shows WebSocket connection state
-- **Stream Simulation**: Buttons to simulate different stream types
-- **Activity Log**: Real-time logging of all events
-- **Multiple Streams**: Test bulk stream capture
-
-### **Test Scenarios**
-1. **Basic Connection**: Verify extension connects to desktop app
-2. **Stream Capture**: Test automatic stream detection
-3. **Manual Download**: Use "SH" button to queue streams
-4. **Real-time Updates**: Monitor live communication
-5. **Error Handling**: Test disconnection scenarios
-
 ## 🔧 **Troubleshooting**
 
 ### **Common Issues**
