@@ -36,10 +36,6 @@ class StreamHelperApp {
     // Create main window when app is ready
     app.whenReady().then(() => {
       this.createMainWindow();
-      // Setup IPC handlers after window is created
-      if (this.mainWindow) {
-        ipcHandlers.setMainWindow(this.mainWindow);
-      }
     });
   }
 
@@ -103,6 +99,10 @@ class StreamHelperApp {
     mainWindow.once('ready-to-show', () => {
       mainWindow.show();
       logger.info('Main window ready');
+      // Setup IPC handlers after window is created
+      if (this.mainWindow) {
+        ipcHandlers.setMainWindow(this.mainWindow);
+      }
     });
 
     // Handle window closed

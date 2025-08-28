@@ -110,6 +110,8 @@ export class IPCHandlers {
   private sendToRenderer(channel: string, data: any): void {
     if (this.mainWindow && !this.mainWindow.isDestroyed()) {
       this.mainWindow.webContents.send(channel, data);
+    } else {
+      console.warn('Cannot send to renderer: main window is null or destroyed');
     }
   }
 

@@ -46,6 +46,7 @@ export class DownloadService {
   }
 
   private updateDownloadProgress(progress: DownloadProgress): void {
+    // console.log('Received progress update:', progress);
     const currentDownloads = this.downloadsSubject.value;
     const downloadIndex = currentDownloads.findIndex(d => d.id === progress.id);
     
@@ -59,7 +60,10 @@ export class DownloadService {
         status: progress.status
       };
       
+      // console.log('Updated download progress:', updatedDownloads[downloadIndex]);
       this.downloadsSubject.next(updatedDownloads);
+    } else {
+      console.warn('Download not found for progress update:', progress.id);
     }
   }
 

@@ -118,7 +118,7 @@ export class DownloadManager {
     const args = [
       download.stream.url,
       '-o', outputTemplate,
-      '--progress-template', 'download:%(progress.downloaded_bytes)s/%(progress.total_bytes)s %(progress.speed)s %(progress.eta)s',
+      // '--progress-template', 'download:%(progress.downloaded_bytes)s/%(progress.total_bytes)s %(progress.speed)s %(progress.eta)s',
       // '--newline',
       '--no-playlist',
       // '--extract-audio',
@@ -192,7 +192,7 @@ export class DownloadManager {
     let speed = '';
     let eta = '';
 
-    // Format 1: download:123456/1234567 1.2MiB/s 123
+    // Format 1: download:123456/1234567 1.2MiB/s 123 (old custom format)
     const progressMatch1 = output.match(/download:(\d+)\/(\d+)\s+([\d.]+[KMGT]iB\/s)\s+(\d+)/);
     if (progressMatch1) {
       const [, downloaded, total, speedStr, etaStr] = progressMatch1;
@@ -202,11 +202,13 @@ export class DownloadManager {
     }
     
     // Format 2: [download] 12.3% of ~123.4MiB at 1.2MiB/s ETA 00:12
-    const progressMatch2 = output.match(/\[download\]\s+([\d.]+)%\s+of\s+~?([\d.]+[KMGT]iB)/);
+    const progressMatch2 = output.match(/\[download\]\s+([\d.]+)%\s+of\s+~?\s*([\d.]+[KMGT]iB)\s+at\s+([\d.]+[KMGT]iB\/s)\s+ETA\s+(\d+:\d+)/);
     if (progressMatch2) {
-      progress = Math.round(parseFloat(progressMatch2[1]));
-      speed = output.match(/at\s+([\d.]+[KMGT]iB\/s)/)?.[1] || '';
-      eta = output.match(/ETA\s+(\d+:\d+)/)?.[1] || '';
+      const [, percent, size, speedStr, etaStr] = progressMatch2;
+      progress = Math.round(parseFloat(percent));
+      speed = speedStr;
+      eta = etaStr;
+      console.log('Format 2 matched:', { percent, speed, eta });
     }
 
     // Format 3: [download] Downloading item 12 of 445
@@ -214,27 +216,51 @@ export class DownloadManager {
     if (progressMatch3) {
       const [, current, total] = progressMatch3;
       progress = Math.round((parseInt(current) / parseInt(total)) * 100);
+      console.log('Format 3 matched:', { current, total, progress });
+    }
+
+    // Format 4: [download] 12.3% of ~123.4MiB at 1.2MiB/s ETA 02:32 (frag 22/1344)
+    const progressMatch4 = output.match(/\[download\]\s+([\d.]+)%\s+of\s+~?\s*([\d.]+[KMGT]iB)\s+at\s+([\d.]+[KMGT]iB\/s)\s+ETA\s+(\d+:\d+)\s*\(frag\s+(\d+)\/(\d+)\)/);
+    if (progressMatch4) {
+      const [, percent, size, speedStr, etaStr, fragCurrent, fragTotal] = progressMatch4;
+      progress = Math.round(parseFloat(percent));
+      speed = speedStr;
+      eta = etaStr;
+      
+      // Also calculate progress based on fragment count for more accuracy
+      const fragProgress = Math.round((parseInt(fragCurrent) / parseInt(fragTotal)) * 100);
+      // Use the higher of the two progress values
+      progress = Math.max(progress, fragProgress);
+      console.log('Format 4 matched:', { percent, speed, eta, fragCurrent, fragTotal, fragProgress, finalProgress: progress });
     }
 
     // If we found any progress, update the download and send to renderer
     if (progress > 0 || output.includes('[download]')) {
-      download.progress = Math.max(download.progress, progress);
+      // Always update progress to show real-time updates from yt-dlp
+      if (progress > 0) {
+        download.progress = progress;
+        console.log('Progress updated to:', progress);
+      }
       if (speed) download.speed = speed;
       if (eta) download.eta = eta;
 
       // Send progress update to renderer
       try {
-        ipcHandlers.sendDownloadProgress({
+        const progressUpdate = {
           id: downloadId,
           progress: download.progress,
           speed: download.speed,
           eta: download.eta,
           status: 'downloading'
-        });
+        };
+        console.log('Sending progress update to renderer:', progressUpdate);
+        ipcHandlers.sendDownloadProgress(progressUpdate);
         logger.debug('Sent progress update to renderer', { downloadId, progress: download.progress, speed, eta });
       } catch (error) {
         logger.error('Failed to send progress update', { error, downloadId });
       }
+    } else {
+      console.log('No progress found in output:', output.trim());
     }
   }
 
