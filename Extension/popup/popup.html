@@ -30,26 +30,42 @@
       </div>
     </div>
     <div class="stats">
-      <span id="requestCount" class="request-count">0 requests</span>
-      <span class="separator">•</span>
-      <span id="totalSize" class="total-size">0 B</span>
-      <span class="separator">•</span>
-      <span class="status" id="status">Ready</span>
-      <span class="separator">•</span>
-      <span class="connection-status" id="connectionStatus" title="StreamHelper Desktop App Connection">
-        <span class="connection-indicator" id="connectionIndicator"></span>
-        <span class="connection-text" id="connectionText">Disconnected</span>
-        <button id="connectBtn" class="connect-btn" title="Connect to StreamHelper Desktop App">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-          </svg>
-          <span>Connect</span>
+      <div class="stat-item">
+        <div class="stat-icon">📊</div>
+        <span class="stat-label">Requests</span>
+        <span id="requestCount" class="stat-value">0</span>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon">💾</div>
+        <span class="stat-label">Data Size</span>
+        <span id="totalSize" class="stat-value">0 B</span>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon">✅</div>
+        <span class="stat-label">Status</span>
+        <span id="status" class="stat-value">Ready</span>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon">🔌</div>
+        <span class="stat-label">Connection</span>
+        <div class="connection-dashboard" id="connectionStatus" title="StreamHelper Desktop App Connection">
+          <span class="connection-indicator" id="connectionIndicator"></span>
+          <span class="connection-text" id="connectionText">Disconnected</span>
+          <button id="connectBtn" class="connect-btn" title="Connect to StreamHelper Desktop App">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L19 8l-9 9z"/>
+            </svg>
+            <span>Connect</span>
+          </button>
+        </div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-icon">👁️</div>
+        <span class="stat-label">View Mode</span>
+        <button id="viewModeToggle" class="view-mode-toggle" title="Toggle between current tab and all requests">
+          <span id="viewModeText">Current Tab</span>
         </button>
-      </span>
-      <span class="separator">•</span>
-      <button id="viewModeToggle" class="view-mode-toggle" title="Toggle between current tab and all requests">
-        <span id="viewModeText">Current Tab</span>
-      </button>
+      </div>
     </div>
   </header>
 

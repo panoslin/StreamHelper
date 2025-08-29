@@ -593,29 +593,7 @@ class StreamHelperPopup {
   /**
    * Update the request count display
    */
-  updateRequestCount() {
-    const countElement = document.getElementById('requestCount');
-    const count = this.filteredRequests.length;
-    const total = this.requests.length;
-    
-    if (count === total) {
-      countElement.textContent = `${count} request${count !== 1 ? 's' : ''}`;
-    } else {
-      countElement.textContent = `${count} of ${total} request${total !== 1 ? 's' : ''}`;
-    }
-    
-    // Also update total size
-    this.updateTotalSize();
-  }
 
-  /**
-   * Update the total size display
-   */
-  updateTotalSize() {
-    const totalSizeElement = document.getElementById('totalSize');
-    const totalSize = this.calculateTotalSize();
-    totalSizeElement.textContent = totalSize;
-  }
 
   /**
    * Calculate total size of all requests
@@ -651,6 +629,32 @@ class StreamHelperPopup {
   updateStatus(status) {
     const statusElement = document.getElementById('status');
     statusElement.textContent = status;
+  }
+
+  updateRequestCount(count) {
+    const countElement = document.getElementById('requestCount');
+    if (count !== undefined) {
+      countElement.textContent = count;
+    } else {
+      const filteredCount = this.filteredRequests.length;
+      const total = this.requests.length;
+      
+      if (filteredCount === total) {
+        countElement.textContent = filteredCount;
+      } else {
+        countElement.textContent = `${filteredCount} of ${total}`;
+      }
+    }
+  }
+
+  updateTotalSize(size) {
+    const sizeElement = document.getElementById('totalSize');
+    if (size !== undefined) {
+      sizeElement.textContent = size;
+    } else {
+      const totalSize = this.calculateTotalSize();
+      sizeElement.textContent = totalSize;
+    }
   }
 
   /**
