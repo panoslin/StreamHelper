@@ -291,7 +291,7 @@ export class DownloadManager {
         logger.error('Failed to send progress update', { error, downloadId });
       }
     } else {
-      console.log('No progress found in output:', output.trim());
+      // console.log('No progress found in output:', output.trim());
     }
   }
 

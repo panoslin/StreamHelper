@@ -83,6 +83,10 @@ import { Subscription } from 'rxjs';
             <div class="download-item" *ngFor="let download of getActiveDownloads(); trackBy: trackByDownloadId">
               <div class="download-info">
                 <div class="download-title">{{ download.stream.pageTitle }}</div>
+                <div class="download-source" *ngIf="download.stream.pageUrl && download.stream.pageUrl !== 'Unknown'">
+                  <i class="pi pi-globe source-icon"></i>
+                  <span class="source-url">{{ download.stream.pageUrl }}</span>
+                </div>
                 <div class="download-url">{{ download.stream.url }}</div>
                 <div class="download-meta">
                   <span class="download-status status-{{ download.status }}">
@@ -144,6 +148,10 @@ import { Subscription } from 'rxjs';
             <div class="download-item completed" *ngFor="let download of getCompletedDownloads()">
               <div class="download-info">
                 <div class="download-title">{{ download.stream.pageTitle }}</div>
+                <div class="download-source" *ngIf="download.stream.pageUrl && download.stream.pageUrl !== 'Unknown'">
+                  <i class="pi pi-globe source-icon"></i>
+                  <span class="source-url">{{ download.stream.pageUrl }}</span>
+                </div>
                 <div class="download-url">{{ download.stream.url }}</div>
                 <div class="download-meta">
                   <span class="download-status status-{{ download.status }}">
@@ -177,6 +185,10 @@ import { Subscription } from 'rxjs';
             <div class="download-item failed" *ngFor="let download of getFailedDownloads()">
               <div class="download-info">
                 <div class="download-title">{{ download.stream.pageTitle }}</div>
+                <div class="download-source" *ngIf="download.stream.pageUrl && download.stream.pageUrl !== 'Unknown'">
+                  <i class="pi pi-globe source-icon"></i>
+                  <span class="source-url">{{ download.stream.pageUrl }}</span>
+                </div>
                 <div class="download-url">{{ download.stream.url }}</div>
                 <div class="download-meta">
                   <span class="download-status status-{{ download.status }}">
@@ -454,6 +466,34 @@ import { Subscription } from 'rxjs';
       text-overflow: ellipsis;
     }
 
+    .download-source {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+      color: var(--text-color-secondary);
+    }
+
+    .source-icon {
+      font-size: 0.875rem;
+      color: var(--primary-color);
+      flex-shrink: 0;
+    }
+
+    .source-url {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+      transition: color 0.2s ease;
+    }
+
+    .source-url:hover {
+      color: var(--primary-color);
+      text-decoration: underline;
+    }
+
     .download-url {
       font-size: 0.875rem;
       color: var(--text-color-secondary);
@@ -461,6 +501,34 @@ import { Subscription } from 'rxjs';
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .download-source {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+      color: var(--text-color-secondary);
+    }
+
+    .source-icon {
+      font-size: 0.875rem;
+      color: var(--primary-color);
+      flex-shrink: 0;
+    }
+
+    .source-url {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+      transition: color 0.2s ease;
+    }
+
+    .source-url:hover {
+      color: var(--primary-color);
+      text-decoration: underline;
     }
 
     .download-meta {
