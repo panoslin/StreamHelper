@@ -112,22 +112,53 @@ export class DownloadManager {
     const downloadDir = configManager.get('defaultDownloadDir');
     
     // Create filename from page title
-    const safeTitle = download.stream.pageTitle.replace(/[^a-z0-9]/gi, '_').substring(0, 50);
-    const outputTemplate = join(downloadDir, `${safeTitle}_%(epoch)s.%(ext)s`);
+    const safeTitle = this.createSafeFilename(download.stream.pageTitle);
+    const outputTemplate = join(downloadDir, `${safeTitle}.%(ext)s`);
+    console.log('outputTemplate', outputTemplate);
 
     const args = [
       download.stream.url,
       '-o', outputTemplate,
-      // '--progress-template', 'download:%(progress.downloaded_bytes)s/%(progress.total_bytes)s %(progress.speed)s %(progress.eta)s',
-      // '--newline',
       '--no-playlist',
-      // '--extract-audio',
-      // '--audio-format', 'mp3',
-      // '--audio-quality', '0',
-      '--no-check-certificate', // Fix SSL certificate issues
+      '--no-check-certificate', // Skip SSL verification (fixes SSL error)
       '--ignore-errors', // Continue on errors
-      '--retries', '3' // Retry failed downloads
+      '--retries', '3', // Retry failed downloads
+      '--format', 'best[ext=mp4]/best', // Add format selection for better reliability
+      '--no-part', // Don't create .part files
+      '--force-overwrites' // Overwrite existing files
     ];
+
+    // Add referer header if we have the page URL
+    if (download.stream.pageUrl && download.stream.pageUrl !== 'Unknown') {
+      try {
+        const pageUrl = new URL(download.stream.pageUrl);
+        const referer = `${pageUrl.protocol}//${pageUrl.host}${pageUrl.pathname}`;
+        args.push('--add-header', `Referer:${referer}`);
+      } catch (error) {
+        // If URL parsing fails, use the page URL as-is
+        args.push('--add-header', `Referer:${download.stream.pageUrl}`);
+      }
+    }
+
+    // Add user agent header to mimic browser
+    if (download.stream.userAgent && download.stream.userAgent !== 'Unknown') {
+      args.push('--add-header', `User-Agent:${download.stream.userAgent}`);
+    } else {
+      // Fallback to realistic user agent
+      args.push('--add-header', 'User-Agent:Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+    }
+
+    // Add origin header for CORS compliance
+    if (download.stream.pageUrl && download.stream.pageUrl !== 'Unknown') {
+      try {
+        const pageUrl = new URL(download.stream.pageUrl);
+        const origin = `${pageUrl.protocol}//${pageUrl.host}`;
+        args.push('--add-header', `Origin:${origin}`);
+      } catch (error) {
+        // If URL parsing fails, skip origin header
+        logger.warn('Failed to parse page URL for origin header', { error, pageUrl: download.stream.pageUrl });
+      }
+    }
 
     try {
       const process = spawn(ytdlpPath, args);
@@ -185,7 +216,7 @@ export class DownloadManager {
     if (!download) return;
 
     // Log all output for debugging
-    logger.debug('yt-dlp output', { downloadId, output: output.trim() });
+    // logger.debug('yt-dlp output', { downloadId, output: output.trim() });
 
     // Parse yt-dlp progress output - try multiple formats
     let progress = 0;
@@ -208,7 +239,7 @@ export class DownloadManager {
       progress = Math.round(parseFloat(percent));
       speed = speedStr;
       eta = etaStr;
-      console.log('Format 2 matched:', { percent, speed, eta });
+      // console.log('Format 2 matched:', { percent, speed, eta });
     }
 
     // Format 3: [download] Downloading item 12 of 445
@@ -216,7 +247,7 @@ export class DownloadManager {
     if (progressMatch3) {
       const [, current, total] = progressMatch3;
       progress = Math.round((parseInt(current) / parseInt(total)) * 100);
-      console.log('Format 3 matched:', { current, total, progress });
+      // console.log('Format 3 matched:', { current, total, progress });
     }
 
     // Format 4: [download] 12.3% of ~123.4MiB at 1.2MiB/s ETA 02:32 (frag 22/1344)
@@ -231,7 +262,7 @@ export class DownloadManager {
       const fragProgress = Math.round((parseInt(fragCurrent) / parseInt(fragTotal)) * 100);
       // Use the higher of the two progress values
       progress = Math.max(progress, fragProgress);
-      console.log('Format 4 matched:', { percent, speed, eta, fragCurrent, fragTotal, fragProgress, finalProgress: progress });
+      // console.log('Format 4 matched:', { percent, speed, eta, fragCurrent, fragTotal, fragProgress, finalProgress: progress });
     }
 
     // If we found any progress, update the download and send to renderer
@@ -239,7 +270,7 @@ export class DownloadManager {
       // Always update progress to show real-time updates from yt-dlp
       if (progress > 0) {
         download.progress = progress;
-        console.log('Progress updated to:', progress);
+        // console.log('Progress updated to:', progress);
       }
       if (speed) download.speed = speed;
       if (eta) download.eta = eta;
@@ -253,9 +284,9 @@ export class DownloadManager {
           eta: download.eta,
           status: 'downloading'
         };
-        console.log('Sending progress update to renderer:', progressUpdate);
+        // console.log('Sending progress update to renderer:', progressUpdate);
         ipcHandlers.sendDownloadProgress(progressUpdate);
-        logger.debug('Sent progress update to renderer', { downloadId, progress: download.progress, speed, eta });
+        // logger.debug('Sent progress update to renderer', { downloadId, progress: download.progress, speed, eta });
       } catch (error) {
         logger.error('Failed to send progress update', { error, downloadId });
       }
@@ -394,6 +425,51 @@ export class DownloadManager {
     });
 
     logger.info('Completed downloads cleared', { count: completedIds.length });
+  }
+
+  /**
+   * Create a safe, readable filename from page title
+   * @param pageTitle - The original page title
+   * @returns Safe filename without invalid characters
+   */
+  private createSafeFilename(pageTitle: string): string {
+    if (!pageTitle || pageTitle === 'Unknown Stream') {
+      return `stream_${Date.now()}`;
+    }
+
+    // Clean the title: preserve more meaningful content while ensuring safety
+    let cleanTitle = pageTitle
+      // Remove HTML entities
+      .replace(/&[a-zA-Z]+;/g, '') // Remove HTML entities like &nbsp;, &amp;, etc.
+      // Remove only the most problematic characters, preserve more content
+      .replace(/[<>:"/\\|?*]/g, '') // Remove invalid filename characters
+      .replace(/\s+/g, ' ') // Normalize multiple spaces to single space
+      .trim();
+
+    // If title is empty after cleaning, use timestamp
+    if (!cleanTitle || cleanTitle.length < 3) {
+      cleanTitle = `stream_${Date.now()}`;
+    }
+
+    // If title is too long, truncate intelligently
+    if (cleanTitle.length > 80) {
+      // Try to find a good breaking point (word boundary)
+      const truncated = cleanTitle.substring(0, 80);
+      const lastSpaceIndex = truncated.lastIndexOf(' ');
+      if (lastSpaceIndex > 50) { // Only break at word if we have enough content
+        cleanTitle = truncated.substring(0, lastSpaceIndex);
+      } else {
+        cleanTitle = truncated;
+      }
+    }
+
+    // Add timestamp to ensure uniqueness (but make it readable)
+    const timestamp = new Date().toISOString()
+      .replace(/[-:]/g, '') // Remove colons and hyphens
+      .replace(/\..+/, '') // Remove milliseconds
+      .substring(8, 14); // Get only HHMMSS part
+
+    return `${cleanTitle}_${timestamp}`;
   }
 }
 

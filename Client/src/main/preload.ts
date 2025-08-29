@@ -12,7 +12,8 @@ const IPC_CHANNELS = {
   GET_DOWNLOADS: 'get-downloads',
   PAUSE_DOWNLOAD: 'pause-download',
   RESUME_DOWNLOAD: 'resume-download',
-  CANCEL_DOWNLOAD: 'cancel-download'
+  CANCEL_DOWNLOAD: 'cancel-download',
+  WEBSOCKET_STATUS_UPDATED: 'websocket-status-updated'
 };
 
 // Expose protected methods that allow the renderer process to use
@@ -48,6 +49,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // WebSocket status
   getWebSocketStatus: () => ipcRenderer.invoke('get-websocket-status'),
+  onWebSocketStatusUpdate: (callback: (status: any) => void) => {
+    ipcRenderer.on(IPC_CHANNELS.WEBSOCKET_STATUS_UPDATED, (event, status) => callback(status));
+  },
   
   // Utility functions
   clearCompletedDownloads: () => ipcRenderer.invoke('clear-completed-downloads'),
@@ -66,6 +70,7 @@ declare global {
       cancelDownload: (downloadId: string) => Promise<any>;
       clearCompletedDownloads: () => Promise<any>;
       getWebSocketStatus: () => Promise<any>;
+      onWebSocketStatusUpdate: (callback: (status: any) => void) => void;
       onStreamUpdate: (callback: (data: any) => void) => void;
       onDownloadProgress: (callback: (progress: any) => void) => void;
       onDownloadCompleted: (callback: (data: any) => void) => void;

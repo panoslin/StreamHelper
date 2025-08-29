@@ -24,7 +24,7 @@ import { Router } from '@angular/router';
       </header>
 
       <!-- Navigation -->
-      <nav class="navigation">
+      <!-- <nav class="navigation">
         <div class="nav-content">
           <button
             class="nav-button"
@@ -34,7 +34,7 @@ import { Router } from '@angular/router';
             <span>Downloads</span>
           </button>
         </div>
-      </nav>
+      </nav> -->
 
       <!-- Main Content -->
       <main class="main-content">

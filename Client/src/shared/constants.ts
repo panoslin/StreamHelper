@@ -22,7 +22,8 @@ export const IPC_CHANNELS = {
   GET_DOWNLOADS: 'get-downloads',
   PAUSE_DOWNLOAD: 'pause-download',
   RESUME_DOWNLOAD: 'resume-download',
-  CANCEL_DOWNLOAD: 'cancel-download'
+  CANCEL_DOWNLOAD: 'cancel-download',
+  WEBSOCKET_STATUS_UPDATED: 'websocket-status-updated'
 };
 
 export const DOWNLOAD_STATUS = {

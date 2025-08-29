@@ -33,6 +33,9 @@ class StreamHelperApp {
     // Start WebSocket server
     webSocketManager.start();
     
+    // Setup WebSocket status listener after manager is started
+    ipcHandlers.setupWebSocketStatusListener();
+    
     // Create main window when app is ready
     app.whenReady().then(() => {
       this.createMainWindow();

@@ -465,6 +465,14 @@ export class DownloadsComponent implements OnInit, OnDestroy {
       })
     );
 
+    // Listen for WebSocket status updates in real-time
+    this.subscriptions.push(
+      (window as any).electronAPI.onWebSocketStatusUpdate((status: any) => {
+        this.websocketStatus = status;
+        this.cdr.detectChanges();
+      })
+    );
+
     this.loadWebSocketStatus();
   }
 

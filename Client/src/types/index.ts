@@ -1,6 +1,8 @@
 export interface StreamData {
   url: string;
   pageTitle: string;
+  pageUrl: string;
+  userAgent: string;
   timestamp: number;
   id?: string;
 }

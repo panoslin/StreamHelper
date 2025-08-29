@@ -1,16 +1,18 @@
 import { WebSocketServer, WebSocket } from 'ws';
+import { EventEmitter } from 'events';
 import { StreamData, WebSocketMessage } from '../../types';
 import { downloadManager } from '../download/manager';
 import { logger } from '../utils/logger';
 import { configManager } from '../config/manager';
 import { ipcHandlers } from '../ipc/handlers';
 
-export class WebSocketManager {
+export class WebSocketManager extends EventEmitter {
   private wss: WebSocketServer | null = null;
   private port: number;
   private clients: Set<WebSocket> = new Set();
 
   constructor() {
+    super();
     this.port = configManager.get('webSocketPort');
   }
 
@@ -27,6 +29,13 @@ export class WebSocketManager {
       });
 
       logger.info('WebSocket server started', { port: this.port });
+      
+      // Emit status change event
+      this.emit('statusChanged', {
+        isRunning: this.isRunning(),
+        connectedClients: this.getConnectedClientsCount(),
+        port: this.port
+      });
     } catch (error) {
       logger.error('Failed to start WebSocket server', { error });
     }
@@ -35,6 +44,13 @@ export class WebSocketManager {
   private handleConnection(ws: WebSocket): void {
     this.clients.add(ws);
     logger.info('WebSocket client connected', { totalClients: this.clients.size });
+    
+    // Emit status change event
+    this.emit('statusChanged', {
+      isRunning: this.isRunning(),
+      connectedClients: this.getConnectedClientsCount(),
+      port: this.port
+    });
 
     ws.on('message', (data: Buffer) => {
       try {
@@ -49,6 +65,13 @@ export class WebSocketManager {
     ws.on('close', () => {
       this.clients.delete(ws);
       logger.info('WebSocket client disconnected', { totalClients: this.clients.size });
+      
+      // Emit status change event
+      this.emit('statusChanged', {
+        isRunning: this.isRunning(),
+        connectedClients: this.getConnectedClientsCount(),
+        port: this.port
+      });
     });
 
     ws.on('error', (error: Error) => {
@@ -88,6 +111,8 @@ export class WebSocketManager {
       const stream: StreamData = {
         url: data.url,
         pageTitle: data.pageTitle || 'Unknown Stream',
+        pageUrl: data.pageUrl || 'Unknown',
+        userAgent: data.userAgent || 'Unknown',
         timestamp: data.timestamp || Date.now()
       };
 
@@ -161,6 +186,16 @@ export class WebSocketManager {
       return false;
     }
 
+    // Validate page URL
+    if (data.pageUrl && typeof data.pageUrl !== 'string') {
+      return false;
+    }
+
+    // Validate user agent
+    if (data.userAgent && typeof data.userAgent !== 'string') {
+      return false;
+    }
+
     // Validate timestamp
     if (data.timestamp && typeof data.timestamp !== 'number') {
       return false;
@@ -200,6 +235,13 @@ export class WebSocketManager {
       this.wss = null;
       this.clients.clear();
       logger.info('WebSocket server stopped');
+      
+      // Emit status change event
+      this.emit('statusChanged', {
+        isRunning: this.isRunning(),
+        connectedClients: this.getConnectedClientsCount(),
+        port: this.port
+      });
     }
   }
 

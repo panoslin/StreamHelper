@@ -140,6 +140,13 @@ export class IPCHandlers {
   sendNewStream(stream: any): void {
     this.sendToRenderer(IPC_CHANNELS.STREAM_UPDATE, stream);
   }
+
+  // Setup WebSocket status change listener
+  setupWebSocketStatusListener(): void {
+    webSocketManager.on('statusChanged', (status: any) => {
+      this.sendToRenderer(IPC_CHANNELS.WEBSOCKET_STATUS_UPDATED, status);
+    });
+  }
 }
 
 export const ipcHandlers = new IPCHandlers();
