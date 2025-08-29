@@ -8,23 +8,70 @@ import { Subscription } from 'rxjs';
   selector: 'app-downloads',
   template: `
     <div class="downloads-page">
-      <div class="page-header">
-        <h2>Downloads</h2>
-        <div class="header-actions">
-          <p-button 
-            label="Show in Finder" 
-            icon="pi pi-folder-open" 
-            [text]="true"
-            (onClick)="openDownloadsFolder()"
-            styleClass="p-button-secondary">
-          </p-button>
-          <p-button 
-            label="Clear Completed" 
-            icon="pi pi-trash" 
-            [text]="true"
-            (onClick)="clearCompleted()"
-            [disabled]="getCompletedDownloads().length === 0">
-          </p-button>
+      <!-- Dashboard Header with Connection Status -->
+      <div class="dashboard-header">
+        <div class="header-content">
+          <div class="header-left">
+            <div class="logo-section">
+              <i class="pi pi-download logo-icon"></i>
+              <h2 class="title">Downloads</h2>
+            </div>
+          </div>
+          
+          <div class="header-center">
+            <div class="status-dashboard">
+              <div class="status-item">
+                <div class="status-icon">
+                  <i class="pi pi-wifi" [class]="websocketStatus.isRunning ? 'status-online' : 'status-offline'"></i>
+                </div>
+                <div class="status-content">
+                  <span class="status-label">Server</span>
+                  <span class="status-value" [class]="websocketStatus.isRunning ? 'status-online' : 'status-offline'">
+                    {{ websocketStatus.isRunning ? 'Running' : 'Stopped' }}
+                  </span>
+                </div>
+              </div>
+              
+              <div class="status-item">
+                <div class="status-icon">
+                  <i class="pi pi-users"></i>
+                </div>
+                <div class="status-content">
+                  <span class="status-label">Clients</span>
+                  <span class="status-value">{{ websocketStatus.connectedClients }}</span>
+                </div>
+              </div>
+              
+              <div class="status-item">
+                <div class="status-icon">
+                  <i class="pi pi-globe"></i>
+                </div>
+                <div class="status-content">
+                  <span class="status-label">Port</span>
+                  <span class="status-value">{{ websocketStatus.port }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="header-right">
+            <div class="header-actions">
+              <p-button 
+                label="Show in Finder" 
+                icon="pi pi-folder-open" 
+                [text]="true"
+                (onClick)="openDownloadsFolder()"
+                styleClass="p-button-secondary">
+              </p-button>
+              <p-button 
+                label="Clear Completed" 
+                icon="pi pi-trash" 
+                [text]="true"
+                (onClick)="clearCompleted()"
+                [disabled]="getCompletedDownloads().length === 0">
+              </p-button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -172,35 +219,7 @@ import { Subscription } from 'rxjs';
           </div>
         </div>
 
-        <!-- Connection Status -->
-        <div class="connection-status">
-          <p-card>
-            <ng-template pTemplate="header">
-              <div class="status-header">
-                <i class="pi pi-wifi status-icon"></i>
-                <span>Connection Status</span>
-              </div>
-            </ng-template>
-            <ng-template pTemplate="content">
-              <div class="status-content">
-                <div class="status-item">
-                  <span class="status-label">WebSocket Server:</span>
-                  <span class="status-value" [class]="websocketStatus.isRunning ? 'status-online' : 'status-offline'">
-                    {{ websocketStatus.isRunning ? 'Running' : 'Stopped' }}
-                  </span>
-                </div>
-                <div class="status-item">
-                  <span class="status-label">Connected Clients:</span>
-                  <span class="status-value">{{ websocketStatus.connectedClients }}</span>
-                </div>
-                <div class="status-item">
-                  <span class="status-label">Port:</span>
-                  <span class="status-value">{{ websocketStatus.port }}</span>
-                </div>
-              </div>
-            </ng-template>
-          </p-card>
-        </div>
+
 
         <!-- Empty State -->
         <div class="empty-state" *ngIf="downloads.length === 0">
@@ -216,16 +235,169 @@ import { Subscription } from 'rxjs';
       max-width: 100%;
     }
 
-    .page-header {
+    /* Dashboard Header Styles - Consistent with StreamHelper Design */
+    .dashboard-header {
+      background: var(--surface-card);
+      color: var(--text-color);
+      padding: 1.5rem 2rem;
+      margin-bottom: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border: 1px solid var(--surface-border);
+      position: relative;
+    }
+
+    .header-content {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 2rem;
+      position: relative;
+      z-index: 1;
     }
 
-    .page-header h2 {
+    .header-left {
+      display: flex;
+      align-items: center;
+    }
+
+    .logo-section {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .logo-icon {
+      font-size: 1.5rem;
+      color: var(--primary-color);
+      transition: all 0.2s ease;
+    }
+
+    .logo-section:hover .logo-icon {
+      color: var(--primary-600);
+    }
+
+    .title {
       margin: 0;
       color: var(--text-color);
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    .header-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+    }
+
+    .status-dashboard {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      min-width: 400px;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      background: var(--surface-section);
+      border-radius: 8px;
+      border: 1px solid var(--surface-border);
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .status-item:hover {
+      background: var(--surface-hover);
+      border-color: var(--primary-color);
+    }
+
+    .status-item::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--primary-color);
+      border-radius: 8px 8px 0 0;
+    }
+
+    .status-item:nth-child(1)::before {
+      background: var(--green-500);
+    }
+
+    .status-item:nth-child(2)::before {
+      background: var(--blue-500);
+    }
+
+    .status-item:nth-child(3)::before {
+      background: var(--orange-500);
+    }
+
+    .status-icon {
+      font-size: 1.25rem;
+      color: var(--primary-color);
+      transition: all 0.2s ease;
+    }
+
+    .status-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .status-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-color-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .status-value {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-color);
+      line-height: 1.2;
+    }
+
+    .status-online {
+      color: var(--green-500) !important;
+    }
+
+    .status-offline {
+      color: var(--red-500) !important;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .header-actions ::ng-deep .p-button {
+      background: var(--surface-section);
+      border: 1px solid var(--surface-border);
+      color: var(--text-color);
+      transition: all 0.2s ease;
+      border-radius: 8px;
+      padding: 0.75rem 1.25rem;
+    }
+
+    .header-actions ::ng-deep .p-button:hover {
+      background: var(--surface-hover);
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+    }
+
+    .header-actions ::ng-deep .p-button:focus {
+      box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.2);
     }
 
     .download-section {
@@ -380,58 +552,7 @@ import { Subscription } from 'rxjs';
       color: var(--red-800);
     }
 
-    .connection-status {
-      margin-top: 2rem;
-      padding: 1rem;
-      background: var(--surface-card);
-      border-radius: 8px;
-      border: 1px solid var(--surface-border);
-    }
 
-    .status-header {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-      color: var(--text-color);
-    }
-
-    .status-header .status-icon {
-      font-size: 1.25rem;
-      color: var(--blue-500);
-    }
-
-    .status-content {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .status-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.875rem;
-      color: var(--text-color-secondary);
-    }
-
-    .status-label {
-      font-weight: 500;
-      color: var(--text-color);
-    }
-
-    .status-value {
-      font-weight: 600;
-      color: var(--text-color);
-    }
-
-    .status-online {
-      color: var(--green-600);
-    }
-
-    .status-offline {
-      color: var(--red-600);
-    }
   `]
 })
 export class DownloadsComponent implements OnInit, OnDestroy {
