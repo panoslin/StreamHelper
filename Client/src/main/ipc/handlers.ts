@@ -43,6 +43,36 @@ export class IPCHandlers {
       return { success };
     });
 
+    ipcMain.handle(IPC_CHANNELS.RETRY_DOWNLOAD, (event, downloadId: string) => {
+      const success = downloadManager.retryDownload(downloadId);
+      if (success) {
+        // Send updated download status to renderer
+        const download = downloadManager.getDownload(downloadId);
+        if (download) {
+          this.sendToRenderer(IPC_CHANNELS.DOWNLOAD_PROGRESS, {
+            id: downloadId,
+            status: 'pending',
+            progress: 0,
+            retryCount: download.retryCount
+          });
+        }
+      }
+      return { success };
+    });
+
+    ipcMain.handle(IPC_CHANNELS.REMOVE_FAILED_DOWNLOAD, (event, downloadId: string) => {
+      const success = downloadManager.removeFailedDownload(downloadId);
+      if (success) {
+        // Send download removed notification to renderer
+        this.sendToRenderer(IPC_CHANNELS.DOWNLOAD_PROGRESS, {
+          id: downloadId,
+          status: 'removed',
+          type: 'removed'
+        });
+      }
+      return { success };
+    });
+
     ipcMain.handle(IPC_CHANNELS.RESUME_DOWNLOAD, (event, downloadId: string) => {
       const success = downloadManager.resumeDownload(downloadId);
       if (success) {

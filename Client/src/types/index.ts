@@ -20,6 +20,10 @@ export interface DownloadItem {
   createdAt: Date;
   startedAt?: Date;
   completedAt?: Date;
+  retryCount?: number;
+  pausedProgress?: number;
+  pausedSpeed?: string;
+  pausedEta?: string;
 }
 
 export interface WebSocketMessage {

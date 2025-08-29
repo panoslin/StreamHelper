@@ -163,6 +163,22 @@ export class DownloadManager {
     try {
       const process = spawn(ytdlpPath, args);
 
+      // If this is a resumed download, restore the preserved progress
+      if (download.pausedProgress !== undefined) {
+        download.progress = download.pausedProgress;
+        download.speed = download.pausedSpeed;
+        download.eta = download.pausedEta;
+        
+        // Send initial progress update to restore UI state
+        ipcHandlers.sendDownloadProgress({
+          id: downloadId,
+          progress: download.progress,
+          speed: download.speed || '',
+          eta: download.eta || '',
+          status: 'downloading'
+        });
+      }
+
       process.stdout?.on('data', (data: Buffer) => {
         this.parseProgress(downloadId, data.toString());
       });
@@ -305,6 +321,13 @@ export class DownloadManager {
       this.activeDownloads.delete(downloadId);
     }
 
+    // Check if this download was intentionally paused
+    if (download.status === 'paused') {
+      logger.info('Download process terminated while paused', { id: downloadId, code });
+      // Don't process queue for paused downloads - they'll be resumed manually
+      return;
+    }
+
     if (code === 0) {
       download.status = 'completed';
       download.progress = 100;
@@ -333,6 +356,14 @@ export class DownloadManager {
       clearInterval(activeDownload.progressInterval);
       this.activeDownloads.delete(downloadId);
     }
+
+    // Check if this download was intentionally paused
+    if (download.status === 'paused') {
+      logger.info('Download error occurred while paused', { id: downloadId, error: error.message });
+      // Don't process queue for paused downloads - they'll be resumed manually
+      return;
+    }
+
     download.status = 'failed';
     download.error = error.message;
     
@@ -347,36 +378,136 @@ export class DownloadManager {
     const download = this.downloads.get(downloadId);
     const activeDownload = this.activeDownloads.get(downloadId);
 
-    if (!download || !activeDownload) {
+    if (!download) {
+      logger.warn('Download not found for pause', { downloadId });
+      return false;
+    }
+
+    if (!activeDownload) {
+      logger.warn('Download not active for pause', { downloadId, status: download.status });
       return false;
     }
 
     if (download.status === 'downloading') {
-      activeDownload.process.kill('SIGSTOP');
-      download.status = 'paused';
-      logger.info('Download paused', { downloadId });
-      return true;
+      try {
+        // Mark as paused first to prevent auto-restart
+        download.status = 'paused';
+        
+        // Clear the progress interval to stop updates
+        clearInterval(activeDownload.progressInterval);
+        
+        // Store current progress and state for resume
+        download.pausedProgress = download.progress;
+        download.pausedSpeed = download.speed;
+        download.pausedEta = download.eta;
+        
+        // Kill the process to actually stop the download
+        activeDownload.process.kill('SIGTERM');
+        
+        // Remove from activeDownloads since we killed the process
+        this.activeDownloads.delete(downloadId);
+        
+        // Add to resume queue for manual restart
+        if (!this.downloadQueue.includes(downloadId)) {
+          this.downloadQueue.unshift(downloadId);
+        }
+        
+        logger.info('Download paused and process terminated', { downloadId });
+        return true;
+      } catch (error) {
+        logger.error('Failed to pause download', { downloadId, error });
+        // Revert status if pause failed
+        download.status = 'downloading';
+        return false;
+      }
+    } else if (download.status === 'paused') {
+      logger.info('Download already paused', { downloadId });
+      return true; // Already paused, consider this a success
+    } else {
+      logger.warn('Cannot pause download in current status', { downloadId, status: download.status });
+      return false;
     }
-
-    return false;
   }
 
   resumeDownload(downloadId: string): boolean {
     const download = this.downloads.get(downloadId);
-    const activeDownload = this.activeDownloads.get(downloadId);
-
-    if (!download || !activeDownload) {
+    
+    if (!download) {
+      logger.warn('Download not found for resume', { downloadId });
       return false;
     }
 
-    if (download.status === 'paused') {
-      activeDownload.process.kill('SIGCONT');
-      download.status = 'downloading';
-      logger.info('Download resumed', { downloadId });
-      return true;
+    if (download.status !== 'paused') {
+      logger.warn('Cannot resume non-paused download', { downloadId, status: download.status });
+      return false;
     }
 
-    return false;
+    try {
+      // Restore paused progress and state
+      if (download.pausedProgress !== undefined) {
+        download.progress = download.pausedProgress;
+        download.speed = download.pausedSpeed;
+        download.eta = download.pausedEta;
+        
+        // Clear paused state
+        download.pausedProgress = undefined;
+        download.pausedSpeed = undefined;
+        download.pausedEta = undefined;
+      }
+      
+      // Reset status to pending for restart
+      download.status = 'pending';
+      
+      // Remove from queue if it's there
+      const queueIndex = this.downloadQueue.indexOf(downloadId);
+      if (queueIndex > -1) {
+        this.downloadQueue.splice(queueIndex, 1);
+      }
+      
+      // Add to front of queue for immediate processing
+      this.downloadQueue.unshift(downloadId);
+      
+      // Process queue to start the download
+      this.processQueue();
+      
+      logger.info('Download queued for resume with preserved progress', { downloadId });
+      return true;
+    } catch (error) {
+      logger.error('Failed to resume download', { downloadId, error });
+      return false;
+    }
+  }
+
+  private restartDownload(downloadId: string): boolean {
+    const download = this.downloads.get(downloadId);
+    if (!download) {
+      logger.warn('Download not found for restart', { downloadId });
+      return false;
+    }
+
+    try {
+      // Reset download state for restart
+      download.status = 'pending';
+      download.progress = download.progress || 0; // Keep current progress
+      
+      // Remove from queue if it's there
+      const queueIndex = this.downloadQueue.indexOf(downloadId);
+      if (queueIndex > -1) {
+        this.downloadQueue.splice(queueIndex, 1);
+      }
+      
+      // Add to front of queue for immediate processing
+      this.downloadQueue.unshift(downloadId);
+      
+      // Process queue to start the download
+      this.processQueue();
+      
+      logger.info('Download queued for restart', { downloadId });
+      return true;
+    } catch (error) {
+      logger.error('Failed to restart download', { downloadId, error });
+      return false;
+    }
   }
 
   cancelDownload(downloadId: string): boolean {
@@ -404,6 +535,71 @@ export class DownloadManager {
 
     logger.info('Download cancelled', { downloadId });
     this.processQueue();
+    return true;
+  }
+
+  retryDownload(downloadId: string): boolean {
+    const download = this.downloads.get(downloadId);
+    
+    if (!download) {
+      logger.warn('Download not found for retry', { downloadId });
+      return false;
+    }
+
+    if (download.status !== 'failed') {
+      logger.warn('Cannot retry non-failed download', { downloadId, status: download.status });
+      return false;
+    }
+
+    // Reset download state
+    download.status = 'pending';
+    download.progress = 0;
+    download.speed = undefined;
+    download.eta = undefined;
+    download.error = undefined;
+    download.retryCount = (download.retryCount || 0) + 1;
+
+    // Add back to queue with higher priority
+    this.downloadQueue.unshift(downloadId);
+
+    logger.info('Download queued for retry', { 
+      downloadId, 
+      retryCount: download.retryCount,
+      url: download.stream.url 
+    });
+
+    // Process queue to start the retry
+    this.processQueue();
+    return true;
+  }
+
+  removeFailedDownload(downloadId: string): boolean {
+    const download = this.downloads.get(downloadId);
+    
+    if (!download) {
+      logger.warn('Download not found for removal', { downloadId });
+      return false;
+    }
+
+    if (download.status !== 'failed') {
+      logger.warn('Cannot remove non-failed download', { downloadId, status: download.status });
+      return false;
+    }
+
+    // Remove from downloads map
+    this.downloads.delete(downloadId);
+    
+    // Remove from queue if it's still there
+    const queueIndex = this.downloadQueue.indexOf(downloadId);
+    if (queueIndex > -1) {
+      this.downloadQueue.splice(queueIndex, 1);
+    }
+
+    logger.info('Failed download removed', { 
+      downloadId, 
+      url: download.stream.url 
+    });
+
     return true;
   }
 

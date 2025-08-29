@@ -13,6 +13,8 @@ const IPC_CHANNELS = {
   PAUSE_DOWNLOAD: 'pause-download',
   RESUME_DOWNLOAD: 'resume-download',
   CANCEL_DOWNLOAD: 'cancel-download',
+  RETRY_DOWNLOAD: 'retry-download',
+  REMOVE_FAILED_DOWNLOAD: 'remove-failed-download',
   WEBSOCKET_STATUS_UPDATED: 'websocket-status-updated'
 };
 
@@ -28,6 +30,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   pauseDownload: (downloadId: string) => ipcRenderer.invoke(IPC_CHANNELS.PAUSE_DOWNLOAD, downloadId),
   resumeDownload: (downloadId: string) => ipcRenderer.invoke(IPC_CHANNELS.RESUME_DOWNLOAD, downloadId),
   cancelDownload: (downloadId: string) => ipcRenderer.invoke(IPC_CHANNELS.CANCEL_DOWNLOAD, downloadId),
+  retryDownload: (downloadId: string) => ipcRenderer.invoke(IPC_CHANNELS.RETRY_DOWNLOAD, downloadId),
+  removeFailedDownload: (downloadId: string) => ipcRenderer.invoke(IPC_CHANNELS.REMOVE_FAILED_DOWNLOAD, downloadId),
   
   // Streams
   onStreamUpdate: (callback: (data: any) => void) => {
@@ -68,6 +72,8 @@ declare global {
       pauseDownload: (downloadId: string) => Promise<any>;
       resumeDownload: (downloadId: string) => Promise<any>;
       cancelDownload: (downloadId: string) => Promise<any>;
+      retryDownload: (downloadId: string) => Promise<any>;
+      removeFailedDownload: (downloadId: string) => Promise<any>;
       clearCompletedDownloads: () => Promise<any>;
       getWebSocketStatus: () => Promise<any>;
       onWebSocketStatusUpdate: (callback: (status: any) => void) => void;

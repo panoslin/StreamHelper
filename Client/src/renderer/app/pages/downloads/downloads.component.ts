@@ -87,7 +87,7 @@ import { Subscription } from 'rxjs';
                   <i class="pi pi-globe source-icon"></i>
                   <span class="source-url">{{ download.stream.pageUrl }}</span>
                 </div>
-                <div class="download-url">{{ download.stream.url }}</div>
+                <!-- <div class="download-url">{{ download.stream.url }}</div> -->
                 <div class="download-meta">
                   <span class="download-status status-{{ download.status }}">
                     <i [class]="getStatusIcon(download.status)"></i>
@@ -96,6 +96,7 @@ import { Subscription } from 'rxjs';
                   <span class="download-queue" *ngIf="download.status === 'pending'">
                     Queue Position: {{ getQueuePosition(download.id) + 1 }}
                   </span>
+                  <!-- Retry count removed for simplicity -->
                 </div>
               </div>
               
@@ -111,32 +112,7 @@ import { Subscription } from 'rxjs';
                 </div>
               </div>
 
-              <div class="download-actions">
-                <p-button 
-                  *ngIf="download.status === 'downloading'"
-                  icon="pi pi-pause" 
-                  [text]="true" 
-                  size="small"
-                  (onClick)="pauseDownload(download.id)"
-                  tooltip="Pause Download">
-                </p-button>
-                <p-button 
-                  *ngIf="download.status === 'paused'"
-                  icon="pi pi-play" 
-                  [text]="true" 
-                  size="small"
-                  (onClick)="resumeDownload(download.id)"
-                  tooltip="Resume Download">
-                </p-button>
-                <p-button 
-                  icon="pi pi-times" 
-                  [text]="true" 
-                  size="small"
-                  (onClick)="cancelDownload(download.id)"
-                  tooltip="Cancel Download"
-                  styleClass="p-button-danger">
-                </p-button>
-              </div>
+              <!-- Download actions removed for simplicity -->
             </div>
           </div>
         </div>
@@ -152,7 +128,7 @@ import { Subscription } from 'rxjs';
                   <i class="pi pi-globe source-icon"></i>
                   <span class="source-url">{{ download.stream.pageUrl }}</span>
                 </div>
-                <div class="download-url">{{ download.stream.url }}</div>
+                <!-- <div class="download-url">{{ download.stream.url }}</div> -->
                 <div class="download-meta">
                   <span class="download-status status-{{ download.status }}">
                     <i [class]="getStatusIcon(download.status)"></i>
@@ -164,16 +140,7 @@ import { Subscription } from 'rxjs';
                 </div>
               </div>
               
-              <div class="download-actions">
-                <p-button 
-                  icon="pi pi-folder-open" 
-                  [text]="true" 
-                  size="small"
-                  (onClick)="openDownloadFolder(download.outputPath)"
-                  tooltip="Open Folder"
-                  *ngIf="download.outputPath">
-                </p-button>
-              </div>
+              <!-- Download actions removed for simplicity -->
             </div>
           </div>
         </div>
@@ -189,7 +156,7 @@ import { Subscription } from 'rxjs';
                   <i class="pi pi-globe source-icon"></i>
                   <span class="source-url">{{ download.stream.pageUrl }}</span>
                 </div>
-                <div class="download-url">{{ download.stream.url }}</div>
+                <!-- <div class="download-url">{{ download.stream.url }}</div> -->
                 <div class="download-meta">
                   <span class="download-status status-{{ download.status }}">
                     <i [class]="getStatusIcon(download.status)"></i>
@@ -199,6 +166,7 @@ import { Subscription } from 'rxjs';
                     <i class="pi pi-exclamation-triangle"></i>
                     {{ download.error }}
                   </span>
+                  <!-- Retry count removed for simplicity -->
                 </div>
                 <div class="download-error-details" *ngIf="download.error">
                   <div class="error-message">
@@ -210,23 +178,7 @@ import { Subscription } from 'rxjs';
                 </div>
               </div>
               
-              <div class="download-actions">
-                <p-button 
-                  icon="pi pi-refresh" 
-                  [text]="true" 
-                  size="small"
-                  (onClick)="retryDownload(download.id)"
-                  tooltip="Retry Download">
-                </p-button>
-                <p-button 
-                  icon="pi pi-trash" 
-                  [text]="true" 
-                  size="small"
-                  (onClick)="removeFailedDownload(download.id)"
-                  tooltip="Remove Failed Download"
-                  styleClass="p-button-danger">
-                </p-button>
-              </div>
+              <!-- Download actions removed for simplicity -->
             </div>
           </div>
         </div>
@@ -531,6 +483,8 @@ import { Subscription } from 'rxjs';
       text-decoration: underline;
     }
 
+    /* Retry count styles removed for simplicity */
+
     .download-meta {
       display: flex;
       gap: 1rem;
@@ -691,47 +645,15 @@ export class DownloadsComponent implements OnInit, OnDestroy {
     return download.id;
   }
 
-  async pauseDownload(downloadId: string): Promise<void> {
-    const success = await this.downloadService.pauseDownload(downloadId);
-    if (success) {
-      this.toastService.showSuccess('Download paused', 'Download Control');
-    } else {
-      this.toastService.showError('Failed to pause download', 'Download Control');
-    }
-  }
-
-  async resumeDownload(downloadId: string): Promise<void> {
-    const success = await this.downloadService.resumeDownload(downloadId);
-    if (success) {
-      this.toastService.showSuccess('Download resumed', 'Download Control');
-    } else {
-      this.toastService.showError('Failed to resume download', 'Download Control');
-    }
-  }
-
-  async cancelDownload(downloadId: string): Promise<void> {
-    const success = await this.downloadService.cancelDownload(downloadId);
-    if (success) {
-      this.toastService.showSuccess('Download cancelled', 'Download Control');
-    } else {
-      this.toastService.showError('Failed to cancel download', 'Download Control');
-    }
-  }
+  // Download control methods removed for simplicity
 
   async clearCompleted(): Promise<void> {
     await this.downloadService.clearCompletedDownloads();
     this.toastService.showSuccess('Completed downloads cleared', 'Downloads');
+    this.cdr.detectChanges();
   }
 
-  async retryDownload(downloadId: string): Promise<void> {
-    // For now, we'll just show a message that retry is not implemented
-    this.toastService.showInfo('Retry functionality coming soon', 'Downloads');
-  }
-
-  async removeFailedDownload(downloadId: string): Promise<void> {
-    // For now, we'll just show a message that removal is not implemented
-    this.toastService.showInfo('Remove functionality coming soon', 'Downloads');
-  }
+  // Retry and remove methods removed for simplicity
 
   private async loadWebSocketStatus(): Promise<void> {
     try {
@@ -741,13 +663,7 @@ export class DownloadsComponent implements OnInit, OnDestroy {
     }
   }
 
-  openDownloadFolder(outputPath?: string): void {
-    if (outputPath) {
-      // This would open the folder in the file explorer
-      // For now, just show a message
-      this.toastService.showInfo(`Would open folder: ${outputPath}`, 'Downloads');
-    }
-  }
+  // openDownloadFolder method removed for simplicity
 
   openDownloadsFolder(): void {
     // Open the main downloads folder in Finder/Explorer

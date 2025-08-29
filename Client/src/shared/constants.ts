@@ -23,6 +23,8 @@ export const IPC_CHANNELS = {
   PAUSE_DOWNLOAD: 'pause-download',
   RESUME_DOWNLOAD: 'resume-download',
   CANCEL_DOWNLOAD: 'cancel-download',
+  RETRY_DOWNLOAD: 'retry-download',
+  REMOVE_FAILED_DOWNLOAD: 'remove-failed-download',
   WEBSOCKET_STATUS_UPDATED: 'websocket-status-updated'
 };
 

@@ -137,6 +137,26 @@ export class DownloadService {
     }
   }
 
+  async retryDownload(downloadId: string): Promise<boolean> {
+    try {
+      const result = await (window as any).electronAPI.retryDownload(downloadId);
+      return result.success;
+    } catch (error) {
+      console.error('Failed to retry download:', error);
+      return false;
+    }
+  }
+
+  async removeFailedDownload(downloadId: string): Promise<boolean> {
+    try {
+      const result = await (window as any).electronAPI.removeFailedDownload(downloadId);
+      return result.success;
+    } catch (error) {
+      console.error('Failed to remove failed download:', error);
+      return false;
+    }
+  }
+
   async clearCompletedDownloads(): Promise<void> {
     try {
       await (window as any).electronAPI.clearCompletedDownloads();
