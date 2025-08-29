@@ -39,8 +39,40 @@ chrome.runtime.onInstalled.addListener(() => {
   // Initialize storage with empty array
   chrome.storage.local.set({ [STORAGE_KEY]: [] });
   
-  // Initialize WebSocket connection
-  initializeWebSocket();
+  // Don't auto-connect - let user manually connect
+  console.log('WebSocket auto-connection disabled. User must manually connect.');
+});
+
+// Listen for messages from popup
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.log('Background received message:', message);
+  
+  switch (message.type) {
+    case 'CONNECT_WEBSOCKET':
+      console.log('🔄 Manual WebSocket connection requested');
+      initializeWebSocket();
+      sendResponse({ success: true, message: 'Connection initiated' });
+      break;
+      
+    case 'DISCONNECT_WEBSOCKET':
+      console.log('🔌 Manual WebSocket disconnection requested');
+      disconnectWebSocket();
+      sendResponse({ success: true, message: 'Disconnection initiated' });
+      break;
+      
+    case 'GET_WEBSOCKET_STATUS':
+      sendResponse({ 
+        connected: isConnected, 
+        websocket: websocket ? websocket.readyState : null 
+      });
+      break;
+      
+    default:
+      // Handle other message types if needed
+      break;
+  }
+  
+  return true; // Keep message channel open for async response
 });
 
 /**
@@ -140,16 +172,11 @@ function initializeWebSocket() {
       console.log('❌ WebSocket disconnected from StreamHelper desktop app:', event.code, event.reason);
       isConnected = false;
       
-      // Attempt to reconnect
-      if (reconnectAttempts < WEBSOCKET_CONFIG.maxReconnectAttempts) {
-        setTimeout(() => {
-          reconnectAttempts++;
-          console.log(`🔄 Attempting to reconnect (${reconnectAttempts}/${WEBSOCKET_CONFIG.maxReconnectAttempts})...`);
-          initializeWebSocket();
-        }, WEBSOCKET_CONFIG.reconnectInterval);
-      } else {
-        console.error('❌ Max reconnection attempts reached');
-      }
+      // Don't auto-reconnect - let user manually reconnect
+      console.log('🔄 Auto-reconnection disabled. User must manually reconnect.');
+      
+      // Notify popup about disconnection
+      notifyPopupAboutConnection(false);
     };
     
     websocket.onerror = (error) => {
@@ -159,6 +186,22 @@ function initializeWebSocket() {
     
   } catch (error) {
     console.error('Error initializing WebSocket:', error);
+  }
+}
+
+/**
+ * Manually disconnect WebSocket connection
+ */
+function disconnectWebSocket() {
+  if (websocket) {
+    console.log('🔌 Manually disconnecting WebSocket...');
+    websocket.close(1000, 'Manual disconnect');
+    websocket = null;
+    isConnected = false;
+    reconnectAttempts = 0;
+    
+    // Notify popup about disconnection
+    notifyPopupAboutConnection(false);
   }
 }
 
@@ -173,8 +216,9 @@ setTimeout(() => {
  * @param {boolean} connected - Whether connected to StreamHelper
  */
 function notifyPopupAboutConnection(connected) {
+  const messageType = connected ? 'WEBSOCKET_CONNECTED' : 'WEBSOCKET_DISCONNECTED';
   chrome.runtime.sendMessage({
-    type: 'WEBSOCKET_CONNECTION_STATUS',
+    type: messageType,
     data: { connected }
   }).catch(() => {
     // Ignore errors when no listeners are available

@@ -26,6 +26,7 @@ class StreamHelperPopup {
   async init() {
     this.setupEventListeners();
     await this.loadCurrentTabRequests();
+    await this.getConnectionStatus();
     this.updateStatus('Ready');
     this.updateViewModeToggle();
   }
@@ -70,16 +71,24 @@ class StreamHelperPopup {
       this.toggleViewMode();
     });
 
+    // Connect button
+    document.getElementById('connectBtn').addEventListener('click', () => {
+      this.toggleConnection();
+    });
+
     // Listen for messages from background script
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      console.log('message: ', message);
       if (message.type === 'NEW_M3U8_REQUEST') {
         this.handleNewRequest(message.data);
       } else if (message.type === 'M3U8_REQUEST_SIZE_UPDATE') {
         this.handleSizeUpdate(message.data);
       } else if (message.type === 'TAB_CHANGED') {
         this.handleTabChange(message.data.tabId);
-      } else if (message.type === 'WEBSOCKET_CONNECTION_STATUS') {
-        this.updateConnectionStatus(message.data.connected);
+      } else if (message.type === 'WEBSOCKET_CONNECTED') {
+        this.updateConnectionStatus(true);
+      } else if (message.type === 'WEBSOCKET_DISCONNECTED') {
+        this.updateConnectionStatus(false);
       } else if (message.type === 'STREAM_ENQUEUED_NOTIFICATION') {
         this.showToast('Stream queued for download in StreamHelper!', 'success');
       } else if (message.type === 'DOWNLOAD_PROGRESS_NOTIFICATION') {
@@ -883,15 +892,67 @@ class StreamHelperPopup {
   updateConnectionStatus(connected) {
     const indicator = document.getElementById('connectionIndicator');
     const text = document.getElementById('connectionText');
+    const connectBtn = document.getElementById('connectBtn');
     
     if (connected) {
       indicator.classList.add('connected');
       text.classList.add('connected');
       text.textContent = 'Connected';
+      connectBtn.classList.add('connected');
+      connectBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+        </svg>
+        <span>Disconnect</span>
+      `;
+      connectBtn.title = 'Disconnect from StreamHelper Desktop App';
     } else {
       indicator.classList.remove('connected');
       text.classList.remove('connected');
       text.textContent = 'Disconnected';
+      connectBtn.classList.remove('connected');
+      connectBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+        </svg>
+        <span>Connect</span>
+      `;
+      connectBtn.title = 'Connect to StreamHelper Desktop App';
+    }
+  }
+
+  /**
+   * Toggle WebSocket connection to StreamHelper desktop app
+   */
+  async toggleConnection() {
+    const connectBtn = document.getElementById('connectBtn');
+    const isCurrentlyConnected = connectBtn.classList.contains('connected');
+    
+    try {
+      if (isCurrentlyConnected) {
+        // Disconnect
+        await chrome.runtime.sendMessage({ type: 'DISCONNECT_WEBSOCKET' });
+        this.showToast('Disconnected from StreamHelper', 'info');
+      } else {
+        // Connect
+        await chrome.runtime.sendMessage({ type: 'CONNECT_WEBSOCKET' });
+        this.showToast('Connecting to StreamHelper...', 'info');
+      }
+    } catch (error) {
+      console.error('Error toggling connection:', error);
+      this.showToast('Connection error: ' + error.message, 'error');
+    }
+  }
+
+  /**
+   * Get current WebSocket connection status
+   */
+  async getConnectionStatus() {
+    try {
+      const response = await chrome.runtime.sendMessage({ type: 'GET_WEBSOCKET_STATUS' });
+      this.updateConnectionStatus(response.connected);
+    } catch (error) {
+      console.error('Error getting connection status:', error);
     }
   }
 
