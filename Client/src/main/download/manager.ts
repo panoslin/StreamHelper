@@ -860,18 +860,32 @@ export class DownloadManager {
       return false;
     }
 
-    if (download.status !== 'failed') {
-      logger.warn('Cannot retry non-failed download', { downloadId, status: download.status });
+    logger.debug('Retry attempt for download', { 
+      downloadId, 
+      currentStatus: download.status,
+      allowedStatuses: ['failed', 'paused', 'pending']
+    });
+
+    // Allow retry for failed, paused, and pending downloads
+    if (!['failed', 'paused', 'pending'].includes(download.status)) {
+      logger.warn('Cannot retry download with current status', { downloadId, status: download.status });
       return false;
     }
 
+    // Store original status for retry count logic
+    const originalStatus = download.status;
+    
     // Reset download state
     download.status = 'pending';
     download.progress = 0;
     download.speed = undefined;
     download.eta = undefined;
     download.error = undefined;
-    download.retryCount = (download.retryCount || 0) + 1;
+    
+    // Increment retry count only for failed downloads
+    if (originalStatus === 'failed') {
+      download.retryCount = (download.retryCount || 0) + 1;
+    }
 
     // Add back to queue with higher priority
     this.downloadQueue.unshift(downloadId);

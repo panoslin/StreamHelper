@@ -118,6 +118,17 @@ const IPC_CHANNELS = {
               </div>
 
               <div class="download-actions">
+                <!-- Retry button for pending downloads -->
+                <p-button 
+                  *ngIf="download.status === 'pending'"
+                  icon="pi pi-refresh" 
+                  [text]="true" 
+                  size="small"
+                  (onClick)="retryDownload(download.id)"
+                  tooltip="Retry Download"
+                  styleClass="p-button-success">
+                </p-button>
+                
                 <p-button 
                   icon="pi pi-wrench" 
                   [text]="true" 
@@ -126,6 +137,7 @@ const IPC_CHANNELS = {
                   tooltip="View Logs"
                   styleClass="p-button-info">
                 </p-button>
+                
                 <p-button 
                   icon="pi pi-trash" 
                   [text]="true" 
@@ -219,6 +231,16 @@ const IPC_CHANNELS = {
               </div>
               
               <div class="download-actions">
+                <!-- Retry button for failed downloads -->
+                <p-button 
+                  icon="pi pi-refresh" 
+                  [text]="true" 
+                  size="small"
+                  (onClick)="retryDownload(download.id)"
+                  tooltip="Retry Download"
+                  styleClass="p-button-success">
+                </p-button>
+                
                 <p-button 
                   icon="pi pi-wrench" 
                   [text]="true" 
@@ -227,6 +249,7 @@ const IPC_CHANNELS = {
                   tooltip="View Logs"
                   styleClass="p-button-info">
                 </p-button>
+                
                 <p-button 
                   icon="pi pi-trash" 
                   [text]="true" 
@@ -965,6 +988,21 @@ export class DownloadsComponent implements OnInit, OnDestroy {
     } catch (error) {
       console.error('Error viewing download logs:', error);
       this.toastService.showError('Failed to load download logs', 'Downloads');
+    }
+  }
+
+  async retryDownload(downloadId: string): Promise<void> {
+    try {
+      const success = await this.downloadService.retryDownload(downloadId);
+      if (success) {
+        this.toastService.showSuccess('Download queued for retry', 'Downloads');
+        // The service automatically reloads downloads after retry
+      } else {
+        this.toastService.showError('Failed to retry download', 'Downloads');
+      }
+    } catch (error) {
+      console.error('Error retrying download:', error);
+      this.toastService.showError('Error retrying download', 'Downloads');
     }
   }
 
