@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-layout',
@@ -13,6 +14,12 @@ import { Router } from '@angular/router';
             <h1>StreamHelper Client</h1>
           </div>
           <div class="header-actions">
+            <p-button 
+              icon="pi pi-moon" 
+              [text]="true" 
+              (onClick)="toggleTheme()"
+              tooltip="Toggle Theme">
+            </p-button>
             <p-button 
               icon="pi pi-cog" 
               [text]="true" 
@@ -168,7 +175,10 @@ import { Router } from '@angular/router';
   `]
 })
 export class LayoutComponent implements OnInit {
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private themeService: ThemeService
+  ) {}
 
   ngOnInit(): void {}
 
@@ -182,5 +192,9 @@ export class LayoutComponent implements OnInit {
 
   isActiveRoute(route: string): boolean {
     return this.router.url === route;
+  }
+
+  toggleTheme(): void {
+    this.themeService.toggleTheme();
   }
 }

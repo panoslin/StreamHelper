@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, nativeTheme } from 'electron';
 import { join } from 'path';
 import { logger } from './utils/logger';
 import { configManager } from './config/manager';
@@ -85,6 +85,14 @@ class StreamHelperApp {
     });
 
     this.mainWindow = mainWindow;
+
+    // Apply theme based on config
+    const config = configManager.getConfig();
+    if (config.theme === 'dark' || (config.theme === 'auto' && nativeTheme.shouldUseDarkColors)) {
+      nativeTheme.themeSource = 'dark';
+    } else {
+      nativeTheme.themeSource = 'light';
+    }
 
     // Load the built renderer files
     // __dirname is dist/main/main/, so we need to go up two levels to reach dist/

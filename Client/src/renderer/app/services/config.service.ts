@@ -53,7 +53,8 @@ export class ConfigService {
       ytdlpPath: '',
       autoStartDownloads: true,
       notifications: true,
-      appDataPath: '~/.streamhelper'
+      appDataPath: '~/.streamhelper',
+      theme: 'auto'
     };
 
     return await this.updateConfig(defaultConfig);

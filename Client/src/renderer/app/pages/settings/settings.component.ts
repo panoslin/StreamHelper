@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ConfigService } from '../../services/config.service';
+import { ThemeService } from '../../services/theme.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -67,6 +68,26 @@ import { Subscription } from 'rxjs';
           <div class="setting-hint">
             <i class="pi pi-info-circle"></i>
             <span>Port for Chrome extension communication</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>Appearance Settings</h3>
+        
+        <div class="setting-item">
+          <label for="theme">Theme:</label>
+          <select 
+            id="theme" 
+            [(ngModel)]="theme" 
+            class="theme-select">
+            <option value="auto">Auto (Follow System)</option>
+            <option value="light">Light Theme</option>
+            <option value="dark">Dark Theme</option>
+          </select>
+          <div class="setting-hint">
+            <i class="pi pi-palette"></i>
+            <span>Choose your preferred theme or let it follow your system settings</span>
           </div>
         </div>
       </div>
@@ -190,6 +211,29 @@ import { Subscription } from 'rxjs';
       box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
     }
 
+    .theme-select {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid var(--surface-border);
+      border-radius: 8px;
+      font-size: 14px;
+      color: var(--text-color);
+      background: var(--surface-section);
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .theme-select:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+    }
+
+    .theme-select option {
+      background: var(--surface-section);
+      color: var(--text-color);
+    }
+
     .setting-hint {
       display: flex;
       align-items: center;
@@ -249,9 +293,13 @@ export class SettingsComponent implements OnInit, OnDestroy {
   webSocketPort = 8080;
   downloadDirectory = '~/Downloads/StreamHelper';
   maxConcurrentDownloads = 3;
+  theme: 'light' | 'dark' | 'auto' = 'auto';
   private configSubscription?: Subscription;
 
-  constructor(private configService: ConfigService) {}
+  constructor(
+    private configService: ConfigService,
+    private themeService: ThemeService
+  ) {}
 
   ngOnInit(): void {
     this.configSubscription = this.configService.config$.subscribe(config => {
@@ -259,6 +307,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
         this.webSocketPort = config.webSocketPort;
         this.downloadDirectory = config.defaultDownloadDir;
         this.maxConcurrentDownloads = config.maxConcurrentDownloads;
+        this.theme = config.theme || 'auto';
       }
     });
   }
@@ -282,6 +331,10 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
   async saveSettings(): Promise<void> {
     try {
+      // Apply theme immediately
+      await this.themeService.setTheme(this.theme);
+      
+      // Save other settings
       const success = await this.configService.updateConfig({
         webSocketPort: this.webSocketPort,
         defaultDownloadDir: this.downloadDirectory,

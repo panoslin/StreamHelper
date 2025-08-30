@@ -9,6 +9,7 @@ const IPC_CHANNELS = {
   DOWNLOAD_FAILED: 'download-failed',
   GET_CONFIG: 'get-config',
   UPDATE_CONFIG: 'update-config',
+  THEME_CHANGED: 'theme-changed',
   GET_DOWNLOADS: 'get-downloads',
   PAUSE_DOWNLOAD: 'pause-download',
   RESUME_DOWNLOAD: 'resume-download',
@@ -65,6 +66,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on(IPC_CHANNELS.WEBSOCKET_STATUS_UPDATED, (event, status) => callback(status));
   },
   
+  // Theme changes
+  onThemeChanged: (callback: (data: any) => void) => {
+    ipcRenderer.on(IPC_CHANNELS.THEME_CHANGED, (event, data) => callback(data));
+  },
+  
   // Utility functions
   clearCompletedDownloads: () => ipcRenderer.invoke('clear-completed-downloads'),
   openDownloadsFolder: () => ipcRenderer.invoke('open-downloads-folder'),
@@ -90,6 +96,7 @@ declare global {
       clearCompletedDownloads: () => Promise<any>;
       getWebSocketStatus: () => Promise<any>;
       onWebSocketStatusUpdate: (callback: (status: any) => void) => void;
+      onThemeChanged: (callback: (data: any) => void) => void;
       onStreamUpdate: (callback: (data: any) => void) => void;
       onDownloadProgress: (callback: (progress: any) => void) => void;
       onDownloadCompleted: (callback: (data: any) => void) => void;

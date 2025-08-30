@@ -9,7 +9,8 @@ export const DEFAULT_CONFIG: AppConfig = {
   ytdlpPath: '',
   autoStartDownloads: true,
   notifications: true,
-  appDataPath: '~/.streamhelper'
+  appDataPath: '~/.streamhelper',
+  theme: 'auto'
 };
 
 export const IPC_CHANNELS = {
@@ -20,6 +21,7 @@ export const IPC_CHANNELS = {
   DOWNLOAD_FAILED: 'download-failed',
   GET_CONFIG: 'get-config',
   UPDATE_CONFIG: 'update-config',
+  THEME_CHANGED: 'theme-changed',
   GET_DOWNLOADS: 'get-downloads',
   PAUSE_DOWNLOAD: 'pause-download',
   RESUME_DOWNLOAD: 'resume-download',

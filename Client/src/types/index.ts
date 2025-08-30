@@ -49,6 +49,7 @@ export interface AppConfig {
   autoStartDownloads: boolean;
   notifications: boolean;
   appDataPath: string;
+  theme: 'light' | 'dark' | 'auto';
 }
 
 export interface DownloadProgress {

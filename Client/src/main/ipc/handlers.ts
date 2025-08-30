@@ -24,6 +24,23 @@ export class IPCHandlers {
 
     ipcMain.handle(IPC_CHANNELS.UPDATE_CONFIG, (event, updates: any) => {
       configManager.updateConfig(updates);
+      
+      // Apply theme changes immediately if theme was updated
+      if (updates.theme) {
+        const { nativeTheme } = require('electron');
+        if (updates.theme === 'dark' || (updates.theme === 'auto' && nativeTheme.shouldUseDarkColors)) {
+          nativeTheme.themeSource = 'dark';
+        } else {
+          nativeTheme.themeSource = 'light';
+        }
+        
+        // Notify renderer about theme change
+        this.sendToRenderer(IPC_CHANNELS.THEME_CHANGED, {
+          theme: updates.theme,
+          isDark: updates.theme === 'dark' || (updates.theme === 'auto' && nativeTheme.shouldUseDarkColors)
+        });
+      }
+      
       return { success: true };
     });
 
