@@ -330,18 +330,6 @@ async function captureM3U8Request(details) {
     // Notify any listening popups about the new request
     notifyPopupAboutNewRequest(requestData);
     
-    // Send to StreamHelper desktop app via WebSocket
-    sendWebSocketMessage({
-      type: 'STREAM_CAPTURED',
-      data: {
-        url: details.url,
-        pageTitle: tab.title,
-        timestamp: Date.now(),
-        tabId: details.tabId,
-        pageUrl: tab.url
-      }
-    });
-    
   } catch (error) {
     console.error('Error capturing m3u8 request:', error);
   }

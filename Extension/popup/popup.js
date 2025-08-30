@@ -401,8 +401,9 @@ class StreamHelperPopup {
 
     // Set up StreamHelper button
     const streamhelperBtn = requestItem.querySelector('.streamhelper-btn');
+    
     streamhelperBtn.addEventListener('click', () => {
-      this.downloadToStreamHelper(request);
+      this.showVideoNameModal(request);
     });
 
     // Set up delete button
@@ -861,17 +862,99 @@ class StreamHelperPopup {
   }
 
   /**
-   * Download stream to StreamHelper desktop app
+   * Show the custom video name modal
    * @param {Object} request - The request object to download
    */
-  async downloadToStreamHelper(request) {
+  showVideoNameModal(request) {
+    const modal = document.getElementById('videoNameModal');
+    const input = document.getElementById('customVideoName');
+    const closeBtn = document.getElementById('modalClose');
+    const cancelBtn = document.getElementById('modalCancel');
+    const confirmBtn = document.getElementById('modalConfirm');
+
+    // Set default value
+    if (input && request.pageTitle) {
+      input.value = this.sanitizeFilename(request.pageTitle);
+    }
+
+    // Show modal
+    modal.classList.add('show');
+    input.focus();
+    input.select();
+
+    // Close modal handlers
+    const closeModal = () => {
+      modal.classList.remove('show');
+    };
+
+    // Event listeners
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+    
+    // Close on overlay click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+      }
+    });
+
+    // Confirm download
+    confirmBtn.addEventListener('click', () => {
+      const customName = input.value.trim();
+      closeModal();
+      this.downloadToStreamHelper(request, customName);
+    });
+
+    // Handle Enter key in input
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const customName = input.value.trim();
+        closeModal();
+        this.downloadToStreamHelper(request, customName);
+      }
+    });
+  }
+
+  /**
+   * Sanitize filename by removing invalid characters
+   * @param {string} filename - The filename to sanitize
+   * @returns {string} Sanitized filename
+   */
+  sanitizeFilename(filename) {
+    if (!filename) return '';
+    
+    return filename
+      .replace(/[<>:"/\\|?*]/g, '') // Remove invalid filename characters
+      .replace(/\s+/g, ' ') // Normalize multiple spaces to single space
+      .trim()
+      .substring(0, 80); // Limit length
+  }
+
+  /**
+   * Download stream to StreamHelper desktop app
+   * @param {Object} request - The request object to download
+   * @param {string} customName - Custom video name (optional)
+   */
+  async downloadToStreamHelper(request, customName = '') {
     try {
+      // Use custom name if provided, otherwise use page title
+      const videoName = customName || request.pageTitle || 'Unknown Stream';
+      
       // Send message to background script to forward to StreamHelper
       const response = await this.sendMessageToBackground({
         type: 'DOWNLOAD_TO_STREAMHELPER',
         data: {
           url: request.url,
-          pageTitle: request.pageTitle,
+          pageTitle: videoName,
+          originalPageTitle: request.pageTitle, // Keep original for reference
+          customName: customName, // Include custom name flag
           timestamp: Date.now(),
           tabId: request.tabId,
           pageUrl: request.pageUrl
