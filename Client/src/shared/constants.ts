@@ -8,7 +8,8 @@ export const DEFAULT_CONFIG: AppConfig = {
   defaultDownloadDir: '~/Downloads/StreamHelper',
   ytdlpPath: '',
   autoStartDownloads: true,
-  notifications: true
+  notifications: true,
+  appDataPath: '~/.streamhelper'
 };
 
 export const IPC_CHANNELS = {

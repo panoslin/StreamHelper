@@ -52,7 +52,8 @@ export class ConfigService {
       defaultDownloadDir: '~/Downloads/StreamHelper',
       ytdlpPath: '',
       autoStartDownloads: true,
-      notifications: true
+      notifications: true,
+      appDataPath: '~/.streamhelper'
     };
 
     return await this.updateConfig(defaultConfig);

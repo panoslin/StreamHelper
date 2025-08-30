@@ -39,6 +39,7 @@ export interface AppConfig {
   ytdlpPath: string;
   autoStartDownloads: boolean;
   notifications: boolean;
+  appDataPath: string;
 }
 
 export interface DownloadProgress {

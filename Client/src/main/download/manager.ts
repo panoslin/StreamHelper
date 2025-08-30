@@ -1,6 +1,6 @@
 import { spawn, ChildProcess } from 'child_process';
 import { join } from 'path';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { DownloadItem, StreamData, DownloadProgress } from '../../types';
 import { generateId } from '../../shared/utils';
 import { configManager } from '../config/manager';
@@ -13,10 +13,15 @@ export class DownloadManager {
   private activeDownloads: Map<string, { process: ChildProcess; progressInterval: NodeJS.Timeout }> = new Map();
   private downloadQueue: string[] = [];
   private maxConcurrentDownloads: number;
+  private persistenceFile!: string;
+  private autoSaveInterval: NodeJS.Timeout | null = null;
 
   constructor() {
     this.maxConcurrentDownloads = configManager.get('maxConcurrentDownloads');
     this.ensureDownloadDirectory();
+    this.initializePersistence();
+    this.loadDownloads();
+    this.startAutoSave();
   }
 
   private ensureDownloadDirectory(): void {
@@ -24,6 +29,177 @@ export class DownloadManager {
     if (!existsSync(downloadDir)) {
       mkdirSync(downloadDir, { recursive: true });
       logger.info('Download directory created', { path: downloadDir });
+    }
+  }
+
+  private initializePersistence(): void {
+    // Set up persistence file path
+    let appDataPath = configManager.get('appDataPath') || '~/.streamhelper';
+    // Expand tilde to actual home directory
+    if (appDataPath.startsWith('~')) {
+      appDataPath = appDataPath.replace('~', require('os').homedir());
+    }
+    this.persistenceFile = join(appDataPath, 'downloads.json');
+    
+    // Ensure app data directory exists
+    if (!existsSync(appDataPath)) {
+      mkdirSync(appDataPath, { recursive: true });
+      logger.info('App data directory created', { path: appDataPath });
+    }
+    
+    logger.info('Persistence initialized', { 
+      originalPath: configManager.get('appDataPath') || '~/.streamhelper',
+      expandedPath: appDataPath,
+      fullPath: this.persistenceFile
+    });
+  }
+
+  private loadDownloads(): void {
+    try {
+      if (!existsSync(this.persistenceFile)) {
+        logger.info('No persistence file found, starting with empty downloads');
+        return;
+      }
+
+      logger.info('Loading downloads from persistence', { file: this.persistenceFile });
+      const data = readFileSync(this.persistenceFile, 'utf8');
+      const downloadsData = JSON.parse(data);
+
+      // Validate data structure
+      if (!downloadsData || !downloadsData.downloads || !Array.isArray(downloadsData.downloads)) {
+        logger.warn('Invalid persistence data structure, starting fresh');
+        return;
+      }
+
+      // Restore downloads with proper date conversion
+      this.downloads.clear();
+      downloadsData.downloads.forEach(([id, downloadData]: [string, any]) => {
+        try {
+          // Convert date strings back to Date objects
+          if (downloadData.createdAt) {
+            downloadData.createdAt = new Date(downloadData.createdAt);
+          }
+          if (downloadData.startedAt) {
+            downloadData.startedAt = new Date(downloadData.startedAt);
+          }
+          if (downloadData.completedAt) {
+            downloadData.completedAt = new Date(downloadData.completedAt);
+          }
+
+          // Create download item with validation
+          const download: DownloadItem = {
+            id: downloadData.id || id,
+            stream: downloadData.stream,
+            status: downloadData.status || 'pending',
+            progress: downloadData.progress || 0,
+            speed: downloadData.speed,
+            eta: downloadData.eta,
+            outputPath: downloadData.outputPath,
+            outputTemplate: downloadData.outputTemplate,
+            error: downloadData.error,
+            priority: downloadData.priority || 0,
+            createdAt: downloadData.createdAt || new Date(),
+            startedAt: downloadData.startedAt,
+            completedAt: downloadData.completedAt,
+            retryCount: downloadData.retryCount || 0,
+            pausedProgress: downloadData.pausedProgress,
+            pausedSpeed: downloadData.pausedSpeed,
+            pausedEta: downloadData.pausedEta
+          };
+
+          this.downloads.set(id, download);
+        } catch (error) {
+          logger.error('Failed to restore download item', { id, error, data: downloadData });
+        }
+      });
+
+      // Restore download queue (only pending downloads)
+      this.downloadQueue = (downloadsData.downloadQueue || []).filter((id: string) => {
+        const download = this.downloads.get(id);
+        return download && download.status === 'pending';
+      });
+
+      // Reset any stuck downloads to pending
+      this.downloads.forEach((download, id) => {
+        if (download.status === 'downloading') {
+          download.status = 'pending';
+          download.progress = 0;
+        }
+      });
+
+      logger.info('Downloads restored from persistence', { 
+        count: this.downloads.size, 
+        queueSize: this.downloadQueue.length 
+      });
+
+      // Send restored downloads to renderer
+      this.downloads.forEach((download, id: string) => {
+        try {
+          ipcHandlers.sendDownloadProgress({
+            id,
+            progress: download.progress,
+            speed: download.speed || '',
+            eta: download.eta || '',
+            status: download.status,
+            type: 'restored'
+          });
+        } catch (error) {
+          logger.error('Failed to send restored download to renderer', { id, error });
+        }
+      });
+
+    } catch (error) {
+      logger.error('Failed to load downloads from persistence', { 
+        error, 
+        file: this.persistenceFile 
+      });
+      // Continue with empty downloads if loading fails
+    }
+  }
+
+  private saveDownloads(): void {
+    try {
+      // Prepare data for persistence
+      const downloadsData = {
+        version: '1.0.0', // For future migrations
+        timestamp: new Date().toISOString(),
+        downloads: Array.from(this.downloads.entries()),
+        downloadQueue: this.downloadQueue
+      };
+
+      // Write to file with atomic operation (write to temp file first)
+      const tempFile = `${this.persistenceFile}.tmp`;
+      writeFileSync(tempFile, JSON.stringify(downloadsData, null, 2), 'utf8');
+      
+      // Atomic move (rename) to final location
+      const fs = require('fs');
+      fs.renameSync(tempFile, this.persistenceFile);
+
+      logger.debug('Downloads saved to persistence', { 
+        count: this.downloads.size, 
+        queueSize: this.downloadQueue.length 
+      });
+    } catch (error) {
+      logger.error('Failed to save downloads to persistence', { error });
+    }
+  }
+
+  private startAutoSave(): void {
+    // Save every 30 seconds
+    this.autoSaveInterval = setInterval(() => {
+      this.saveDownloads();
+    }, 30000);
+
+    // Also save on app exit
+    process.on('exit', () => this.saveDownloads());
+    process.on('SIGINT', () => this.saveDownloads());
+    process.on('SIGTERM', () => this.saveDownloads());
+  }
+
+  private stopAutoSave(): void {
+    if (this.autoSaveInterval) {
+      clearInterval(this.autoSaveInterval);
+      this.autoSaveInterval = null;
     }
   }
 
@@ -79,6 +255,10 @@ export class DownloadManager {
     }
 
     this.processQueue();
+    
+    // Save to persistence
+    this.saveDownloads();
+    
     return this.downloadQueue.indexOf(downloadItem.id);
   }
 
@@ -377,6 +557,9 @@ export class DownloadManager {
 
     // Process next item in queue
     this.processQueue();
+    
+    // Save to persistence
+    this.saveDownloads();
   }
 
   private handleDownloadError(downloadId: string, error: Error): void {
@@ -444,9 +627,13 @@ export class DownloadManager {
           this.downloadQueue.unshift(downloadId);
         }
         
-        logger.info('Download paused and process terminated', { downloadId });
-        return true;
-      } catch (error) {
+            logger.info('Download paused and process terminated', { downloadId });
+    
+    // Save to persistence
+    this.saveDownloads();
+    
+    return true;
+  } catch (error) {
         logger.error('Failed to pause download', { downloadId, error });
         // Revert status if pause failed
         download.status = 'downloading';
@@ -502,9 +689,13 @@ export class DownloadManager {
       // Process queue to start the download
       this.processQueue();
       
-      logger.info('Download queued for resume with preserved progress', { downloadId });
-      return true;
-    } catch (error) {
+          logger.info('Download queued for resume with preserved progress', { downloadId });
+    
+    // Save to persistence
+    this.saveDownloads();
+    
+    return true;
+  } catch (error) {
       logger.error('Failed to resume download', { downloadId, error });
       return false;
     }
@@ -534,9 +725,13 @@ export class DownloadManager {
       // Process queue to start the download
       this.processQueue();
       
-      logger.info('Download queued for restart', { downloadId });
-      return true;
-    } catch (error) {
+          logger.info('Download queued for restart', { downloadId });
+    
+    // Save to persistence
+    this.saveDownloads();
+    
+    return false;
+  } catch (error) {
       logger.error('Failed to restart download', { downloadId, error });
       return false;
     }
@@ -567,6 +762,10 @@ export class DownloadManager {
 
     logger.info('Download cancelled', { downloadId });
     this.processQueue();
+    
+    // Save to persistence
+    this.saveDownloads();
+    
     return true;
   }
 
@@ -602,6 +801,10 @@ export class DownloadManager {
 
     // Process queue to start the retry
     this.processQueue();
+    
+    // Save to persistence
+    this.saveDownloads();
+    
     return true;
   }
 
@@ -632,6 +835,9 @@ export class DownloadManager {
       url: download.stream.url 
     });
 
+    // Save to persistence
+    this.saveDownloads();
+    
     return true;
   }
 
@@ -653,6 +859,9 @@ export class DownloadManager {
     });
 
     logger.info('Completed downloads cleared', { count: completedIds.length });
+    
+    // Save to persistence
+    this.saveDownloads();
   }
 
   /**
