@@ -66,10 +66,10 @@ class StreamHelperPopup {
       this.openSettings();
     });
 
-    // View mode toggle button
-    document.getElementById('viewModeToggle').addEventListener('click', () => {
-      this.toggleViewMode();
-    });
+    // // View mode toggle button
+    // document.getElementById('viewModeToggle').addEventListener('click', () => {
+    //   this.toggleViewMode();
+    // });
 
     // Connect button
     document.getElementById('connectBtn').addEventListener('click', () => {
@@ -628,8 +628,8 @@ class StreamHelperPopup {
    * @param {string} status - The status message to display
    */
   updateStatus(status) {
-    const statusElement = document.getElementById('status');
-    statusElement.textContent = status;
+    // const statusElement = document.getElementById('status');
+    // statusElement.textContent = status;
   }
 
   updateRequestCount(count) {
