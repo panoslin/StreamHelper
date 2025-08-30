@@ -134,6 +134,29 @@ export class IPCHandlers {
       }
     });
 
+    // Highlight file in Finder
+    ipcMain.handle(IPC_CHANNELS.HIGHLIGHT_FILE_IN_FINDER, (event, filePath: string) => {
+      try {
+        const { shell } = require('electron');
+        
+        // Expand the ~ to the actual home directory if present
+        const expandedPath = filePath.replace(/^~/, require('os').homedir());
+        
+        // On macOS, use the 'showItemInFolder' method to highlight the specific file
+        if (process.platform === 'darwin') {
+          shell.showItemInFolder(expandedPath);
+        } else {
+          // On other platforms, just open the folder
+          shell.openPath(require('path').dirname(expandedPath));
+        }
+        
+        return { success: true, path: expandedPath };
+      } catch (error) {
+        logger.error('Failed to highlight file in Finder', { error, filePath });
+        return { success: false, error: (error as Error).message };
+      }
+    });
+
     logger.info('IPC handlers setup completed');
   }
 

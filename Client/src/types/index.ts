@@ -15,6 +15,7 @@ export interface DownloadItem {
   speed?: string;
   eta?: string;
   outputPath?: string;
+  outputTemplate?: string;
   error?: string;
   priority: number;
   createdAt: Date;

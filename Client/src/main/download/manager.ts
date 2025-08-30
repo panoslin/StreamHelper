@@ -115,6 +115,9 @@ export class DownloadManager {
     const safeTitle = this.createSafeFilename(download.stream.pageTitle);
     const outputTemplate = join(downloadDir, `${safeTitle}.%(ext)s`);
     console.log('outputTemplate', outputTemplate);
+    
+    // Store the output template for later use
+    download.outputTemplate = outputTemplate;
 
     const args = [
       download.stream.url,
@@ -332,9 +335,38 @@ export class DownloadManager {
       download.status = 'completed';
       download.progress = 100;
       download.completedAt = new Date();
-      logger.info('Download completed successfully', { id: downloadId });
       
-      ipcHandlers.sendDownloadCompleted(downloadId);
+      // Determine the actual output path from the template
+      if (download.outputTemplate) {
+        // Try to find the actual file by looking for files matching the pattern
+        const downloadDir = configManager.get('defaultDownloadDir');
+        const expandedDir = downloadDir.replace(/^~/, require('os').homedir());
+        const safeTitle = this.createSafeFilename(download.stream.pageTitle);
+        
+        // Look for common video extensions
+        const extensions = ['mp4', 'mkv', 'avi', 'mov', 'webm', 'flv'];
+        for (const ext of extensions) {
+          const potentialPath = join(expandedDir, `${safeTitle}.${ext}`);
+          try {
+            const fs = require('fs');
+            if (fs.existsSync(potentialPath)) {
+              download.outputPath = potentialPath;
+              break;
+            }
+          } catch (error) {
+            logger.warn('Failed to check file existence', { path: potentialPath, error });
+          }
+        }
+        
+        // If no file found, use the template as fallback
+        if (!download.outputPath) {
+          download.outputPath = download.outputTemplate.replace('%(ext)s', 'mp4');
+        }
+      }
+      
+      logger.info('Download completed successfully', { id: downloadId, outputPath: download.outputPath });
+      
+      ipcHandlers.sendDownloadCompleted(downloadId, download.outputPath);
     } else {
       download.status = 'failed';
       download.error = `Process exited with code ${code}`;

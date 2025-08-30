@@ -116,22 +116,22 @@ export class WebSocketManager extends EventEmitter {
         timestamp: data.timestamp || Date.now()
       };
 
-      // Check if this stream is already being processed
-      const existingDownload = Array.from(downloadManager.getDownloads())
-        .find(d => d.stream.url === stream.url);
+      // // Check if this stream is already being processed
+      // const existingDownload = Array.from(downloadManager.getDownloads())
+      //   .find(d => d.stream.url === stream.url);
       
-      if (existingDownload) {
-        this.sendMessage(ws, {
-          type: 'STREAM_ENQUEUED',
-          data: { 
-            message: 'Stream already in queue',
-            queuePosition: -1,
-            stream,
-            existing: true
-          }
-        });
-        return;
-      }
+      // if (existingDownload) {
+      //   this.sendMessage(ws, {
+      //     type: 'STREAM_ENQUEUED',
+      //     data: { 
+      //       message: 'Stream already in queue',
+      //       queuePosition: -1,
+      //       stream,
+      //       existing: true
+      //     }
+      //   });
+      //   return;
+      // }
 
       // Enqueue the stream for download
       const queuePosition = await downloadManager.enqueueStream(stream);

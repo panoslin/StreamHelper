@@ -140,7 +140,16 @@ import { Subscription } from 'rxjs';
                 </div>
               </div>
               
-              <!-- Download actions removed for simplicity -->
+              <div class="download-actions">
+                <p-button 
+                  icon="pi pi-eye" 
+                  [text]="true" 
+                  size="small"
+                  (onClick)="highlightFileInFinder(download.outputPath)"
+                  tooltip="Show File in Finder"
+                  *ngIf="download.outputPath">
+                </p-button>
+              </div>
             </div>
           </div>
         </div>
@@ -664,6 +673,27 @@ export class DownloadsComponent implements OnInit, OnDestroy {
   }
 
   // openDownloadFolder method removed for simplicity
+
+  highlightFileInFinder(filePath?: string): void {
+    if (filePath) {
+      try {
+        // Use Electron IPC to highlight file in Finder
+        (window as any).electronAPI.highlightFileInFinder(filePath).then((result: any) => {
+          if (result && result.success) {
+            this.toastService.showSuccess('File highlighted in Finder', 'Downloads');
+          } else {
+            this.toastService.showError('Failed to show file in Finder', 'Downloads');
+          }
+        }).catch((error: any) => {
+          console.error('Failed to highlight file in Finder:', error);
+          this.toastService.showError('Failed to show file in Finder', 'Downloads');
+        });
+      } catch (error) {
+        console.error('Error highlighting file in Finder:', error);
+        this.toastService.showError('Error showing file in Finder', 'Downloads');
+      }
+    }
+  }
 
   openDownloadsFolder(): void {
     // Open the main downloads folder in Finder/Explorer

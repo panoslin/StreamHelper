@@ -15,6 +15,7 @@ const IPC_CHANNELS = {
   CANCEL_DOWNLOAD: 'cancel-download',
   RETRY_DOWNLOAD: 'retry-download',
   REMOVE_FAILED_DOWNLOAD: 'remove-failed-download',
+  HIGHLIGHT_FILE_IN_FINDER: 'highlight-file-in-finder',
   WEBSOCKET_STATUS_UPDATED: 'websocket-status-updated'
 };
 
@@ -32,6 +33,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   cancelDownload: (downloadId: string) => ipcRenderer.invoke(IPC_CHANNELS.CANCEL_DOWNLOAD, downloadId),
   retryDownload: (downloadId: string) => ipcRenderer.invoke(IPC_CHANNELS.RETRY_DOWNLOAD, downloadId),
   removeFailedDownload: (downloadId: string) => ipcRenderer.invoke(IPC_CHANNELS.REMOVE_FAILED_DOWNLOAD, downloadId),
+  highlightFileInFinder: (filePath: string) => ipcRenderer.invoke(IPC_CHANNELS.HIGHLIGHT_FILE_IN_FINDER, filePath),
   
   // Streams
   onStreamUpdate: (callback: (data: any) => void) => {
@@ -74,6 +76,7 @@ declare global {
       cancelDownload: (downloadId: string) => Promise<any>;
       retryDownload: (downloadId: string) => Promise<any>;
       removeFailedDownload: (downloadId: string) => Promise<any>;
+      highlightFileInFinder: (filePath: string) => Promise<any>;
       clearCompletedDownloads: () => Promise<any>;
       getWebSocketStatus: () => Promise<any>;
       onWebSocketStatusUpdate: (callback: (status: any) => void) => void;
