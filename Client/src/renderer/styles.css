@@ -281,9 +281,18 @@ body.light-theme {
   color: var(--p-text-color-secondary) !important;
 }
 
+.dark-theme .settings-section {
+  background-color: var(--p-surface-card) !important;
+  border-color: var(--p-surface-border) !important;
+}
+
 .dark-theme .settings-section h3 {
   color: var(--p-text-color) !important;
   border-bottom-color: var(--p-surface-border) !important;
+}
+
+.dark-theme .setting-item {
+  color: var(--p-text-color) !important;
 }
 
 .dark-theme .setting-item label {
@@ -296,6 +305,31 @@ body.light-theme {
 
 .dark-theme .setting-hint i {
   color: var(--p-primary-color) !important;
+}
+
+.dark-theme .directory-input,
+.dark-theme .number-input,
+.dark-theme .theme-select {
+  background-color: var(--p-surface-section) !important;
+  color: var(--p-text-color) !important;
+  border-color: var(--p-surface-border) !important;
+}
+
+.dark-theme .directory-input:focus,
+.dark-theme .number-input:focus,
+.dark-theme .theme-select:focus {
+  border-color: var(--p-primary-color) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+.dark-theme .browse-btn {
+  background-color: var(--p-surface-section) !important;
+  color: var(--p-text-color) !important;
+  border-color: var(--p-surface-border) !important;
+}
+
+.dark-theme .browse-btn:hover {
+  background-color: var(--p-surface-hover) !important;
 }
 
 .dark-theme .btn {

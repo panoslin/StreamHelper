@@ -6,7 +6,7 @@ import { Subscription } from 'rxjs';
 @Component({
   selector: 'app-settings',
   template: `
-    <div class="settings-page">
+    <div class="settings-page" [class.dark-theme]="isDarkMode">
       <div class="settings-header">
         <h2>Settings</h2>
         <p>Configure StreamHelper application settings</p>
@@ -294,7 +294,9 @@ export class SettingsComponent implements OnInit, OnDestroy {
   downloadDirectory = '~/Downloads/StreamHelper';
   maxConcurrentDownloads = 3;
   theme: 'light' | 'dark' | 'auto' = 'auto';
+  isDarkMode = false;
   private configSubscription?: Subscription;
+  private themeSubscription?: Subscription;
 
   constructor(
     private configService: ConfigService,
@@ -310,11 +312,19 @@ export class SettingsComponent implements OnInit, OnDestroy {
         this.theme = config.theme || 'auto';
       }
     });
+
+    // Subscribe to theme changes
+    this.themeSubscription = this.themeService.isDarkMode$.subscribe(isDark => {
+      this.isDarkMode = isDark;
+    });
   }
 
   ngOnDestroy(): void {
     if (this.configSubscription) {
       this.configSubscription.unsubscribe();
+    }
+    if (this.themeSubscription) {
+      this.themeSubscription.unsubscribe();
     }
   }
 

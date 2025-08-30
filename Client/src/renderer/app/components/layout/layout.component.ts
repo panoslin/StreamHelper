@@ -13,7 +13,7 @@ import { ThemeService } from '../../services/theme.service';
             <i class="pi pi-video" style="font-size: 1.5rem; margin-right: 0.5rem;"></i>
             <h1>StreamHelper Client</h1>
           </div>
-          <div class="header-actions">
+          <div class="header-actions" style="display: flex; gap: 0.5rem;">
             <p-button 
               icon="pi pi-moon" 
               [text]="true" 
