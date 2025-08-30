@@ -291,10 +291,11 @@ export class DownloadManager {
     const ytdlpPath = configManager.get('ytdlpPath');
     const downloadDir = configManager.get('defaultDownloadDir');
     
-    // Create filename from page title
-    const safeTitle = this.createSafeFilename(download.stream.pageTitle);
+    // Create filename from page title or custom name
+    const titleToUse = download.stream.customName || download.stream.pageTitle;
+    const safeTitle = this.createSafeFilename(titleToUse);
     const outputTemplate = join(downloadDir, `${safeTitle}.%(ext)s`);
-    console.log('outputTemplate', outputTemplate);
+    console.log('outputTemplate', outputTemplate, 'from title:', titleToUse);
     
     // Store the output template for later use
     download.outputTemplate = outputTemplate;
@@ -521,7 +522,8 @@ export class DownloadManager {
         // Try to find the actual file by looking for files matching the pattern
         const downloadDir = configManager.get('defaultDownloadDir');
         const expandedDir = downloadDir.replace(/^~/, require('os').homedir());
-        const safeTitle = this.createSafeFilename(download.stream.pageTitle);
+        const titleToUse = download.stream.customName || download.stream.pageTitle;
+        const safeTitle = this.createSafeFilename(titleToUse);
         
         // Look for common video extensions
         const extensions = ['mp4', 'mkv', 'avi', 'mov', 'webm', 'flv'];
@@ -832,6 +834,43 @@ export class DownloadManager {
 
     logger.info('Failed download removed', { 
       downloadId, 
+      url: download.stream.url 
+    });
+
+    // Save to persistence
+    this.saveDownloads();
+    
+    return true;
+  }
+
+  removeDownload(downloadId: string): boolean {
+    const download = this.downloads.get(downloadId);
+    
+    if (!download) {
+      logger.warn('Download not found for removal', { downloadId });
+      return false;
+    }
+
+    // Remove from downloads map
+    this.downloads.delete(downloadId);
+    
+    // Remove from queue if it's still there
+    const queueIndex = this.downloadQueue.indexOf(downloadId);
+    if (queueIndex > -1) {
+      this.downloadQueue.splice(queueIndex, 1);
+    }
+
+    // Remove from active downloads if it's running
+    const activeDownload = this.activeDownloads.get(downloadId);
+    if (activeDownload) {
+      activeDownload.process.kill('SIGTERM');
+      clearInterval(activeDownload.progressInterval);
+      this.activeDownloads.delete(downloadId);
+    }
+
+    logger.info('Download removed', { 
+      downloadId, 
+      status: download.status,
       url: download.stream.url 
     });
 

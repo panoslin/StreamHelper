@@ -5,6 +5,8 @@ export interface StreamData {
   userAgent: string;
   timestamp: number;
   id?: string;
+  originalPageTitle?: string;
+  customName?: string;
 }
 
 export interface DownloadItem {

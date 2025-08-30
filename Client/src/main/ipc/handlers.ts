@@ -157,6 +157,24 @@ export class IPCHandlers {
       }
     });
 
+    // Remove individual download
+    ipcMain.handle(IPC_CHANNELS.REMOVE_DOWNLOAD, (event, downloadId: string) => {
+      try {
+        const success = downloadManager.removeDownload(downloadId);
+        if (success) {
+          this.sendToRenderer(IPC_CHANNELS.DOWNLOAD_PROGRESS, {
+            id: downloadId,
+            status: 'removed',
+            type: 'removed'
+          });
+        }
+        return { success };
+      } catch (error) {
+        logger.error('Failed to remove download', { error, downloadId });
+        return { success: false, error: (error as Error).message };
+      }
+    });
+
     logger.info('IPC handlers setup completed');
   }
 

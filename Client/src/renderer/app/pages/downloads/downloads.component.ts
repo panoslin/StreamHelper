@@ -112,7 +112,16 @@ import { Subscription } from 'rxjs';
                 </div>
               </div>
 
-              <!-- Download actions removed for simplicity -->
+              <div class="download-actions">
+                <p-button 
+                  icon="pi pi-trash" 
+                  [text]="true" 
+                  size="small"
+                  (onClick)="removeDownload(download.id)"
+                  tooltip="Remove Download"
+                  styleClass="p-button-danger">
+                </p-button>
+              </div>
             </div>
           </div>
         </div>
@@ -148,6 +157,14 @@ import { Subscription } from 'rxjs';
                   (onClick)="highlightFileInFinder(download.outputPath)"
                   tooltip="Show File in Finder"
                   *ngIf="download.outputPath">
+                </p-button>
+                <p-button 
+                  icon="pi pi-trash" 
+                  [text]="true" 
+                  size="small"
+                  (onClick)="removeDownload(download.id)"
+                  tooltip="Remove Download"
+                  styleClass="p-button-danger">
                 </p-button>
               </div>
             </div>
@@ -187,7 +204,16 @@ import { Subscription } from 'rxjs';
                 </div>
               </div>
               
-              <!-- Download actions removed for simplicity -->
+              <div class="download-actions">
+                <p-button 
+                  icon="pi pi-trash" 
+                  [text]="true" 
+                  size="small"
+                  (onClick)="removeDownload(download.id)"
+                  tooltip="Remove Download"
+                  styleClass="p-button-danger">
+                </p-button>
+              </div>
             </div>
           </div>
         </div>
@@ -693,6 +719,22 @@ export class DownloadsComponent implements OnInit, OnDestroy {
         this.toastService.showError('Error showing file in Finder', 'Downloads');
       }
     }
+  }
+
+  removeDownload(downloadId: string): void {
+    this.downloadService.removeDownload(downloadId).then((success: boolean) => {
+      if (success) {
+        this.toastService.showSuccess('Download removed from history', 'Downloads');
+        // Force change detection to update UI immediately
+        this.cdr.detectChanges();
+        setTimeout(() => this.cdr.detectChanges(), 100);
+      } else {
+        this.toastService.showError('Failed to remove download', 'Downloads');
+      }
+    }).catch((error: any) => {
+      console.error('Error removing download:', error);
+      this.toastService.showError('Error removing download', 'Downloads');
+    });
   }
 
   openDownloadsFolder(): void {

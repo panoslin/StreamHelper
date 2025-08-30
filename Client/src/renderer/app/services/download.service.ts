@@ -157,6 +157,16 @@ export class DownloadService {
     }
   }
 
+  async removeDownload(downloadId: string): Promise<boolean> {
+    try {
+      const result = await (window as any).electronAPI.removeDownload(downloadId);
+      return result.success;
+    } catch (error) {
+      console.error('Failed to remove download:', error);
+      return false;
+    }
+  }
+
   async clearCompletedDownloads(): Promise<void> {
     try {
       await (window as any).electronAPI.clearCompletedDownloads();
