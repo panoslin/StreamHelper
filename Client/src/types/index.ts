@@ -27,6 +27,13 @@ export interface DownloadItem {
   pausedProgress?: number;
   pausedSpeed?: string;
   pausedEta?: string;
+  logs?: {
+    stdout: string[];
+    stderr: string[];
+    fullCommand: string;
+    exitCode?: number;
+    errorDetails?: string;
+  };
 }
 
 export interface WebSocketMessage {

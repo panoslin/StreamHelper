@@ -119,6 +119,14 @@ const IPC_CHANNELS = {
 
               <div class="download-actions">
                 <p-button 
+                  icon="pi pi-wrench" 
+                  [text]="true" 
+                  size="small"
+                  (onClick)="viewDownloadLogs(download.id)"
+                  tooltip="View Logs"
+                  styleClass="p-button-info">
+                </p-button>
+                <p-button 
                   icon="pi pi-trash" 
                   [text]="true" 
                   size="small"
@@ -155,6 +163,14 @@ const IPC_CHANNELS = {
               </div>
               
               <div class="download-actions">
+              <p-button 
+                  icon="pi pi-wrench" 
+                  [text]="true" 
+                  size="small"
+                  (onClick)="viewDownloadLogs(download.id)"
+                  tooltip="View Logs"
+                  styleClass="p-button-info">
+                </p-button>
                 <p-button 
                   icon="pi pi-eye" 
                   [text]="true" 
@@ -210,6 +226,14 @@ const IPC_CHANNELS = {
               </div>
               
               <div class="download-actions">
+                <p-button 
+                  icon="pi pi-wrench" 
+                  [text]="true" 
+                  size="small"
+                  (onClick)="viewDownloadLogs(download.id)"
+                  tooltip="View Logs"
+                  styleClass="p-button-info">
+                </p-button>
                 <p-button 
                   icon="pi pi-trash" 
                   [text]="true" 
@@ -568,6 +592,188 @@ const IPC_CHANNELS = {
       flex-shrink: 0;
     }
 
+    /* Logs Modal Styles */
+    .logs-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .logs-modal-content {
+      background: var(--surface-card);
+      border-radius: 12px;
+      width: 90%;
+      max-width: 800px;
+      max-height: 90vh;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--surface-border);
+    }
+
+    .logs-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--surface-border);
+      background: var(--surface-section);
+    }
+
+    .logs-modal-header h3 {
+      margin: 0;
+      color: var(--text-color);
+      font-size: 1.25rem;
+    }
+
+    .logs-modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: var(--text-color-secondary);
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .logs-modal-close:hover {
+      background: var(--surface-hover);
+      color: var(--text-color);
+    }
+
+    .logs-modal-body {
+      padding: 1.5rem;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+
+    .log-section {
+      margin-bottom: 1.5rem;
+    }
+
+    .log-section h4 {
+      margin: 0 0 0.5rem 0;
+      color: var(--text-color);
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .log-info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .log-info-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .log-info-item strong {
+      color: var(--text-color);
+      font-size: 0.875rem;
+    }
+
+    .log-info-item span, .log-info-item code {
+      color: var(--text-color-secondary);
+      font-size: 0.875rem;
+      font-family: monospace;
+    }
+
+    .log-info-item .status-completed { color: var(--green-600); font-weight: 600; }
+    .log-info-item .status-failed { color: var(--red-600); font-weight: 600; }
+    .log-info-item .status-downloading { color: var(--blue-600); font-weight: 600; }
+    .log-info-item .status-pending { color: var(--orange-600); font-weight: 600; }
+
+    .log-command {
+      background: var(--surface-section);
+      border: 1px solid var(--surface-border);
+      border-radius: 6px;
+      padding: 0.75rem;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 0.875rem;
+      color: var(--text-color);
+      white-space: pre-wrap;
+      word-break: break-all;
+      margin: 0;
+    }
+
+    .log-exit-code {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      background: var(--surface-section);
+      border: 1px solid var(--surface-border);
+      border-radius: 4px;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 0.875rem;
+      color: var(--text-color);
+    }
+
+    .log-error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 6px;
+      padding: 0.75rem;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 0.75rem;
+      color: #dc2626;
+      white-space: pre-wrap;
+      word-break: break-all;
+      margin: 0;
+    }
+
+    .log-output, .log-error-output {
+      background: var(--surface-section);
+      border: 1px solid var(--surface-border);
+      border-radius: 6px;
+      padding: 0.75rem;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-color);
+      white-space: pre-wrap;
+      word-break: break-all;
+      margin: 0;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .logs-modal-footer {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--surface-border);
+      display: flex;
+      justify-content: flex-end;
+      background: var(--surface-section);
+    }
+
+    .logs-modal-btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .logs-modal-btn-primary {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .logs-modal-btn-primary:hover {
+      background: var(--primary-600);
+      transform: translateY(-1px);
+    }
+
     .empty-state {
       text-align: center;
       padding: 3rem;
@@ -724,7 +930,7 @@ export class DownloadsComponent implements OnInit, OnDestroy {
         // Use Electron IPC to highlight file in Finder
         (window as any).electronAPI.highlightFileInFinder(filePath).then((result: any) => {
           if (result && result.success) {
-            this.toastService.showSuccess('File highlighted in Finder', 'Downloads');
+            // this.toastService.showSuccess('File highlighted in Finder', 'Downloads');
           } else {
             this.toastService.showError('Failed to show file in Finder', 'Downloads');
           }
@@ -742,7 +948,7 @@ export class DownloadsComponent implements OnInit, OnDestroy {
   removeDownload(downloadId: string): void {
     this.downloadService.removeDownload(downloadId).then((success: boolean) => {
       if (success) {
-        this.toastService.showSuccess('Download removed from history', 'Downloads');
+        // this.toastService.showSuccess('Download removed from history', 'Downloads');
         // Force change detection to update UI immediately
         this.cdr.detectChanges();
         setTimeout(() => this.cdr.detectChanges(), 100);
@@ -753,6 +959,107 @@ export class DownloadsComponent implements OnInit, OnDestroy {
       console.error('Error removing download:', error);
       this.toastService.showError('Error removing download', 'Downloads');
     });
+  }
+
+  async viewDownloadLogs(downloadId: string): Promise<void> {
+    try {
+      const logs = await this.downloadService.getDownloadLogs(downloadId);
+      if (logs) {
+        this.showLogsModal(logs, downloadId);
+      } else {
+        this.toastService.showError('No logs available for this download', 'Downloads');
+      }
+    } catch (error) {
+      console.error('Error viewing download logs:', error);
+      this.toastService.showError('Failed to load download logs', 'Downloads');
+    }
+  }
+
+  private showLogsModal(logs: any, downloadId: string): void {
+    // Get download info for better context
+    const download = this.downloads.find(d => d.id === downloadId);
+    const downloadTitle = download?.stream.pageTitle || 'Unknown Download';
+    const downloadStatus = download?.status || 'Unknown Status';
+    
+    // Create a modal to display the logs
+    const modal = document.createElement('div');
+    modal.className = 'logs-modal-overlay';
+    modal.innerHTML = `
+      <div class="logs-modal-content">
+        <div class="logs-modal-header">
+          <h3>Download Logs - ${downloadTitle}</h3>
+          <button class="logs-modal-close">&times;</button>
+        </div>
+        <div class="logs-modal-body">
+          <div class="log-section">
+            <h4>Download Information:</h4>
+            <div class="log-info-grid">
+              <div class="log-info-item">
+                <strong>Status:</strong> <span class="status-${downloadStatus}">${downloadStatus}</span>
+              </div>
+              <div class="log-info-item">
+                <strong>ID:</strong> <code>${downloadId}</code>
+              </div>
+              <div class="log-info-item">
+                <strong>Created:</strong> ${download?.createdAt ? new Date(download.createdAt).toLocaleString() : 'N/A'}
+              </div>
+              ${download?.startedAt ? `
+                <div class="log-info-item">
+                  <strong>Started:</strong> ${new Date(download.startedAt).toLocaleString()}
+                </div>
+              ` : ''}
+              ${download?.completedAt ? `
+                <div class="log-info-item">
+                  <strong>Completed:</strong> ${new Date(download.completedAt).toLocaleString()}
+                </div>
+              ` : ''}
+            </div>
+          </div>
+          <div class="log-section">
+            <h4>Command Executed:</h4>
+            <pre class="log-command">${logs.fullCommand || 'N/A'}</pre>
+          </div>
+          ${logs.exitCode !== undefined ? `
+            <div class="log-section">
+              <h4>Exit Code:</h4>
+              <span class="log-exit-code">${logs.exitCode}</span>
+            </div>
+          ` : ''}
+          ${logs.errorDetails ? `
+            <div class="log-section">
+              <h4>Error Details:</h4>
+              <pre class="log-error">${logs.errorDetails}</pre>
+            </div>
+          ` : ''}
+          <div class="log-section">
+            <h4>Standard Output:</h4>
+            <pre class="log-output">${logs.stdout?.join('') || 'No output'}</pre>
+          </div>
+          <div class="log-section">
+            <h4>Error Output:</h4>
+            <pre class="log-error-output">${logs.stderr?.join('') || 'No errors'}</pre>
+          </div>
+        </div>
+        <div class="logs-modal-footer">
+          <button class="logs-modal-btn logs-modal-btn-primary" onclick="this.closest('.logs-modal-overlay').remove()">Close</button>
+        </div>
+      </div>
+    `;
+
+    // Add event listener for close button
+    const closeBtn = modal.querySelector('.logs-modal-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => modal.remove());
+    }
+
+    // Add click outside to close
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.remove();
+      }
+    });
+
+    document.body.appendChild(modal);
   }
 
   openDownloadsFolder(): void {

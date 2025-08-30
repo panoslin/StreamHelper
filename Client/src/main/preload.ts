@@ -18,6 +18,7 @@ const IPC_CHANNELS = {
   REMOVE_DOWNLOAD: 'remove-download',
   HIGHLIGHT_FILE_IN_FINDER: 'highlight-file-in-finder',
   SELECT_DIRECTORY: 'select-directory',
+  GET_DOWNLOAD_LOGS: 'get-download-logs',
   WEBSOCKET_STATUS_UPDATED: 'websocket-status-updated'
 };
 
@@ -38,6 +39,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   removeDownload: (downloadId: string) => ipcRenderer.invoke(IPC_CHANNELS.REMOVE_DOWNLOAD, downloadId),
   highlightFileInFinder: (filePath: string) => ipcRenderer.invoke(IPC_CHANNELS.HIGHLIGHT_FILE_IN_FINDER, filePath),
   selectDirectory: () => ipcRenderer.invoke(IPC_CHANNELS.SELECT_DIRECTORY),
+  getDownloadLogs: (downloadId: string) => ipcRenderer.invoke(IPC_CHANNELS.GET_DOWNLOAD_LOGS, downloadId),
   
   // Streams
   onStreamUpdate: (callback: (data: any) => void) => {
@@ -84,6 +86,7 @@ declare global {
       removeDownload: (downloadId: string) => Promise<any>;
       highlightFileInFinder: (filePath: string) => Promise<any>;
       selectDirectory: () => Promise<any>;
+      getDownloadLogs: (downloadId: string) => Promise<any>;
       clearCompletedDownloads: () => Promise<any>;
       getWebSocketStatus: () => Promise<any>;
       onWebSocketStatusUpdate: (callback: (status: any) => void) => void;

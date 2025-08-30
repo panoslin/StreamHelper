@@ -114,10 +114,25 @@ export class DownloadManager {
             retryCount: downloadData.retryCount || 0,
             pausedProgress: downloadData.pausedProgress,
             pausedSpeed: downloadData.pausedSpeed,
-            pausedEta: downloadData.pausedEta
+            pausedEta: downloadData.pausedEta,
+            logs: downloadData.logs // Restore logs from persistence
           };
 
           this.downloads.set(id, download);
+          
+          // Debug logging for logs restoration
+          if (downloadData.logs) {
+            logger.debug('Logs restored for download', { 
+              id, 
+              hasLogs: !!downloadData.logs,
+              stdoutCount: downloadData.logs.stdout?.length || 0,
+              stderrCount: downloadData.logs.stderr?.length || 0,
+              hasCommand: !!downloadData.logs.fullCommand,
+              exitCode: downloadData.logs.exitCode
+            });
+          } else {
+            logger.debug('No logs found for download', { id });
+          }
         } catch (error) {
           logger.error('Failed to restore download item', { id, error, data: downloadData });
         }
@@ -220,7 +235,14 @@ export class DownloadManager {
       status: 'pending',
       progress: 0,
       priority,
-      createdAt: new Date()
+      createdAt: new Date(),
+      logs: {
+        stdout: [],
+        stderr: [],
+        fullCommand: '',
+        exitCode: undefined,
+        errorDetails: undefined
+      }
     };
 
     this.downloads.set(downloadItem.id, downloadItem);
@@ -298,6 +320,17 @@ export class DownloadManager {
     download.status = 'downloading';
     download.startedAt = new Date();
 
+    // Initialize logs for this download (always create logs regardless of status)
+    if (!download.logs) {
+      download.logs = {
+        stdout: [],
+        stderr: [],
+        fullCommand: '',
+        exitCode: undefined,
+        errorDetails: undefined
+      };
+    }
+
     const ytdlpPath = configManager.get('ytdlpPath');
     const downloadDir = configManager.get('defaultDownloadDir');
     const expandedDir = this.expandPath(downloadDir);
@@ -321,6 +354,11 @@ export class DownloadManager {
       '--no-part', // Don't create .part files
       '--force-overwrites' // Overwrite existing files
     ];
+
+    // Store the full command for logging
+    if (download.logs) {
+      download.logs.fullCommand = `${ytdlpPath} ${args.join(' ')}`;
+    }
 
     // Add referer header if we have the page URL
     if (download.stream.pageUrl && download.stream.pageUrl !== 'Unknown') {
@@ -374,11 +412,23 @@ export class DownloadManager {
       }
 
       process.stdout?.on('data', (data: Buffer) => {
-        this.parseProgress(downloadId, data.toString());
+        const output = data.toString();
+        this.parseProgress(downloadId, output);
+        
+        // Store stdout logs
+        if (download.logs) {
+          download.logs.stdout.push(output);
+        }
       });
 
       process.stderr?.on('data', (data: Buffer) => {
-        this.parseProgress(downloadId, data.toString());
+        const output = data.toString();
+        this.parseProgress(downloadId, output);
+        
+        // Store stderr logs
+        if (download.logs) {
+          download.logs.stderr.push(output);
+        }
       });
 
       // Send periodic progress updates to ensure UI stays responsive
@@ -403,10 +453,20 @@ export class DownloadManager {
       this.activeDownloads.set(downloadId, { process, progressInterval });
 
       process.on('close', (code: number) => {
+        // Store exit code in logs
+        if (download.logs) {
+          download.logs.exitCode = code;
+        }
+        
         this.handleDownloadComplete(downloadId, code);
       });
 
       process.on('error', (error: Error) => {
+        // Store error details in logs
+        if (download.logs) {
+          download.logs.errorDetails = error.message;
+        }
+        
         this.handleDownloadError(downloadId, error);
       });
 
@@ -527,6 +587,11 @@ export class DownloadManager {
       download.progress = 100;
       download.completedAt = new Date();
       
+      // Ensure logs are captured for completed downloads
+      if (download.logs) {
+        download.logs.exitCode = code;
+      }
+      
       // Determine the actual output path from the template
       if (download.outputTemplate) {
         // Try to find the actual file by looking for files matching the pattern
@@ -562,6 +627,12 @@ export class DownloadManager {
     } else {
       download.status = 'failed';
       download.error = `Process exited with code ${code}`;
+      
+      // Ensure logs are captured for failed downloads
+      if (download.logs) {
+        download.logs.exitCode = code;
+      }
+      
       logger.error('Download failed', { id: downloadId, code });
       
       ipcHandlers.sendDownloadFailed(downloadId, download.error);
@@ -888,6 +959,30 @@ export class DownloadManager {
     this.saveDownloads();
     
     return true;
+  }
+
+  getDownloadLogs(downloadId: string): any {
+    const download = this.downloads.get(downloadId);
+    if (!download) {
+      logger.warn('Download not found for logs retrieval', { downloadId });
+      return null;
+    }
+    
+    if (!download.logs) {
+      logger.warn('No logs found for download', { downloadId, status: download.status });
+      return null;
+    }
+    
+    logger.debug('Logs retrieved for download', { 
+      downloadId, 
+      hasLogs: !!download.logs,
+      stdoutCount: download.logs.stdout?.length || 0,
+      stderrCount: download.logs.stderr?.length || 0,
+      hasCommand: !!download.logs.fullCommand,
+      exitCode: download.logs.exitCode
+    });
+    
+    return download.logs;
   }
 
   getDownloads(): DownloadItem[] {

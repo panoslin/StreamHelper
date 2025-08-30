@@ -195,6 +195,21 @@ export class IPCHandlers {
       }
     });
 
+    // Get download logs
+    ipcMain.handle(IPC_CHANNELS.GET_DOWNLOAD_LOGS, (event, downloadId: string) => {
+      try {
+        const logs = downloadManager.getDownloadLogs(downloadId);
+        if (logs) {
+          return { success: true, logs };
+        } else {
+          return { success: false, error: 'Logs not found' };
+        }
+      } catch (error) {
+        logger.error('Failed to get download logs', { error, downloadId });
+        return { success: false, error: (error as Error).message };
+      }
+    });
+
     logger.info('IPC handlers setup completed');
   }
 

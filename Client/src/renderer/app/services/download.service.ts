@@ -167,6 +167,16 @@ export class DownloadService {
     }
   }
 
+  async getDownloadLogs(downloadId: string): Promise<any> {
+    try {
+      const result = await (window as any).electronAPI.getDownloadLogs(downloadId);
+      return result.success ? result.logs : null;
+    } catch (error) {
+      console.error('Failed to get download logs:', error);
+      return null;
+    }
+  }
+
   async clearCompletedDownloads(): Promise<void> {
     try {
       await (window as any).electronAPI.clearCompletedDownloads();
