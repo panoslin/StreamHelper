@@ -215,14 +215,7 @@ const IPC_CHANNELS = {
                   </span>
                   <!-- Retry count removed for simplicity -->
                 </div>
-                <div class="download-error-details" *ngIf="download.error">
-                  <div class="error-message">
-                    <strong>Error Details:</strong> {{ getErrorMessage(download.error) }}
-                  </div>
-                  <div class="error-suggestion" *ngIf="getErrorSuggestion(download.error)">
-                    <strong>Suggestion:</strong> {{ getErrorSuggestion(download.error) }}
-                  </div>
-                </div>
+
               </div>
               
               <div class="download-actions">
@@ -1082,119 +1075,5 @@ export class DownloadsComponent implements OnInit, OnDestroy {
     return new Date(timestamp).toLocaleString();
   }
 
-  getErrorMessage(error: string): string {
-    if (error.includes('Process exited with code')) {
-      const codeMatch = error.match(/Process exited with code (\d+)/);
-      if (codeMatch) {
-        const code = parseInt(codeMatch[1]);
-        if (code === 1) {
-          return 'The download process failed with exit code 1. This usually indicates a yt-dlp error or network issue.';
-        } else if (code === -2) {
-          return 'The download process was interrupted or cancelled.';
-        } else if (code === 2) {
-          return 'The download process failed due to invalid arguments or configuration.';
-        }
-        return `The download process failed with exit code ${code}. This indicates an error during execution.`;
-      }
-      return 'The download process exited unexpectedly. This usually indicates a yt-dlp error or system issue.';
-    }
-    if (error.includes('ENOENT')) {
-      return 'File or directory not found. The yt-dlp binary is missing.';
-    }
-    if (error.includes('ECONNREFUSED')) {
-      return 'Connection refused. Please check your internet connection or server status.';
-    }
-    if (error.includes('ECONNRESET')) {
-      return 'Connection reset by peer. This might indicate a network issue or server problem.';
-    }
-    if (error.includes('ETIMEDOUT')) {
-      return 'Request timed out. Please check your internet connection or server response time.';
-    }
-    if (error.includes('ENOTFOUND')) {
-      return 'Domain not found. The requested URL is invalid or the server is down.';
-    }
-    if (error.includes('EHOSTUNREACH')) {
-      return 'Host unreachable. The requested URL is not reachable from your current network.';
-    }
-    if (error.includes('ECONNABORTED')) {
-      return 'Connection aborted. The request was interrupted or cancelled.';
-    }
-    if (error.includes('EPIPE')) {
-      return 'Broken pipe. The connection was closed unexpectedly.';
-    }
-    if (error.includes('EAI_AGAIN')) {
-      return 'DNS lookup failed. Please check your DNS settings or try again later.';
-    }
-    if (error.includes('ENETUNREACH')) {
-      return 'Network is unreachable. Please check your network connection.';
-    }
-    if (error.includes('EADDRINUSE')) {
-      return 'Address already in use. The requested port might be occupied.';
-    }
-    if (error.includes('EACCES')) {
-      return 'Permission denied. You do not have the necessary permissions to access this resource.';
-    }
-    if (error.includes('EPERM')) {
-      return 'Operation not permitted. The system has rejected the request.';
-    }
-    return error;
-  }
 
-  getErrorSuggestion(error: string): string | null {
-    if (error.includes('Process exited with code')) {
-      const codeMatch = error.match(/Process exited with code (\d+)/);
-      if (codeMatch) {
-        const code = parseInt(codeMatch[1]);
-        if (code === 1) {
-          return 'Check if the URL is accessible, verify yt-dlp is working, and ensure your internet connection is stable.';
-        } else if (code === -2) {
-          return 'The download was interrupted. Try starting the download again.';
-        } else if (code === 2) {
-          return 'Check your yt-dlp configuration and ensure the URL format is supported.';
-        }
-        return 'Try restarting the download. If the issue persists, check the URL and your network connection.';
-      }
-      return 'Try restarting the download. If the issue persists, check your yt-dlp installation and network connection.';
-    }
-    if (error.includes('ENOENT')) {
-      return 'Install yt-dlp: brew install yt-dlp, or check the yt-dlp path in settings.';
-    }
-    if (error.includes('ECONNREFUSED')) {
-      return 'Check your internet connection and ensure the server is running.';
-    }
-    if (error.includes('ECONNRESET')) {
-      return 'Verify the URL and try again. If the issue persists, check your firewall settings.';
-    }
-    if (error.includes('ETIMEDOUT')) {
-      return 'Check your internet connection and try again. If the issue persists, verify the server response time.';
-    }
-    if (error.includes('ENOTFOUND')) {
-      return 'Verify the URL and try again. If the issue persists, check your DNS settings.';
-    }
-    if (error.includes('EHOSTUNREACH')) {
-      return 'Check your network connection and ensure the server is reachable.';
-    }
-    if (error.includes('ECONNABORTED')) {
-      return 'Check your internet connection and try again. If the issue persists, verify the server response time.';
-    }
-    if (error.includes('EPIPE')) {
-      return 'Check your internet connection and try again. If the issue persists, verify the server response time.';
-    }
-    if (error.includes('EAI_AGAIN')) {
-      return 'Check your DNS settings and try again. If the issue persists, try a different DNS server.';
-    }
-    if (error.includes('ENETUNREACH')) {
-      return 'Check your network connection and ensure you are connected to the internet.';
-    }
-    if (error.includes('EADDRINUSE')) {
-      return 'The requested port might be occupied by another application. Try a different port or stop the other application.';
-    }
-    if (error.includes('EACCES')) {
-      return 'You do not have permission to access this resource. Check your user permissions or file/directory ownership.';
-    }
-    if (error.includes('EPERM')) {
-      return 'You do not have permission to perform this operation. Check your user permissions.';
-    }
-    return null;
-  }
 }
