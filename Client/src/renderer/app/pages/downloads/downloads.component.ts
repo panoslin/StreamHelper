@@ -4,6 +4,11 @@ import { DownloadService } from '../../services/download.service';
 import { ToastService } from '../../services/toast.service';
 import { Subscription } from 'rxjs';
 
+// Import IPC channels for cleanup
+const IPC_CHANNELS = {
+  WEBSOCKET_STATUS_UPDATED: 'websocket-status-updated'
+};
+
 @Component({
   selector: 'app-downloads',
   template: `
@@ -644,18 +649,31 @@ export class DownloadsComponent implements OnInit, OnDestroy {
     );
 
     // Listen for WebSocket status updates in real-time
-    this.subscriptions.push(
-      (window as any).electronAPI.onWebSocketStatusUpdate((status: any) => {
-        this.websocketStatus = status;
-        this.cdr.detectChanges();
-      })
-    );
+    // Note: ipcRenderer.on doesn't return a subscription, so we can't add it to subscriptions array
+    (window as any).electronAPI.onWebSocketStatusUpdate((status: any) => {
+      this.websocketStatus = status;
+      this.cdr.detectChanges();
+    });
 
     this.loadWebSocketStatus();
   }
 
   ngOnDestroy(): void {
-    this.subscriptions.forEach(sub => sub.unsubscribe());
+    // Only unsubscribe from RxJS subscriptions
+    this.subscriptions.forEach(sub => {
+      if (sub && typeof sub.unsubscribe === 'function') {
+        sub.unsubscribe();
+      }
+    });
+    
+    // Remove IPC listeners manually if the method exists
+    try {
+      if ((window as any).electronAPI.removeAllListeners) {
+        (window as any).electronAPI.removeAllListeners(IPC_CHANNELS.WEBSOCKET_STATUS_UPDATED);
+      }
+    } catch (error) {
+      console.warn('Could not remove IPC listeners:', error);
+    }
   }
 
   getActiveDownloads(): DownloadItem[] {

@@ -17,6 +17,7 @@ const IPC_CHANNELS = {
   REMOVE_FAILED_DOWNLOAD: 'remove-failed-download',
   REMOVE_DOWNLOAD: 'remove-download',
   HIGHLIGHT_FILE_IN_FINDER: 'highlight-file-in-finder',
+  SELECT_DIRECTORY: 'select-directory',
   WEBSOCKET_STATUS_UPDATED: 'websocket-status-updated'
 };
 
@@ -36,6 +37,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   removeFailedDownload: (downloadId: string) => ipcRenderer.invoke(IPC_CHANNELS.REMOVE_FAILED_DOWNLOAD, downloadId),
   removeDownload: (downloadId: string) => ipcRenderer.invoke(IPC_CHANNELS.REMOVE_DOWNLOAD, downloadId),
   highlightFileInFinder: (filePath: string) => ipcRenderer.invoke(IPC_CHANNELS.HIGHLIGHT_FILE_IN_FINDER, filePath),
+  selectDirectory: () => ipcRenderer.invoke(IPC_CHANNELS.SELECT_DIRECTORY),
   
   // Streams
   onStreamUpdate: (callback: (data: any) => void) => {
@@ -64,6 +66,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Utility functions
   clearCompletedDownloads: () => ipcRenderer.invoke('clear-completed-downloads'),
   openDownloadsFolder: () => ipcRenderer.invoke('open-downloads-folder'),
+  removeAllListeners: (channel: string) => ipcRenderer.removeAllListeners(channel),
 });
 
 // Type definitions for TypeScript
@@ -80,6 +83,7 @@ declare global {
       removeFailedDownload: (downloadId: string) => Promise<any>;
       removeDownload: (downloadId: string) => Promise<any>;
       highlightFileInFinder: (filePath: string) => Promise<any>;
+      selectDirectory: () => Promise<any>;
       clearCompletedDownloads: () => Promise<any>;
       getWebSocketStatus: () => Promise<any>;
       onWebSocketStatusUpdate: (callback: (status: any) => void) => void;

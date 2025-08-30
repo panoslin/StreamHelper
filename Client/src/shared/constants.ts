@@ -28,6 +28,7 @@ export const IPC_CHANNELS = {
   REMOVE_FAILED_DOWNLOAD: 'remove-failed-download',
   REMOVE_DOWNLOAD: 'remove-download',
   HIGHLIGHT_FILE_IN_FINDER: 'highlight-file-in-finder',
+  SELECT_DIRECTORY: 'select-directory',
   WEBSOCKET_STATUS_UPDATED: 'websocket-status-updated'
 };
 

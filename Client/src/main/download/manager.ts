@@ -26,10 +26,20 @@ export class DownloadManager {
 
   private ensureDownloadDirectory(): void {
     const downloadDir = configManager.get('defaultDownloadDir');
-    if (!existsSync(downloadDir)) {
-      mkdirSync(downloadDir, { recursive: true });
-      logger.info('Download directory created', { path: downloadDir });
+    const expandedDir = this.expandPath(downloadDir);
+    
+    if (!existsSync(expandedDir)) {
+      mkdirSync(expandedDir, { recursive: true });
+      logger.info('Download directory created', { path: expandedDir });
     }
+  }
+
+  private expandPath(path: string): string {
+    // Expand ~ to home directory
+    if (path.startsWith('~')) {
+      return path.replace('~', require('os').homedir());
+    }
+    return path;
   }
 
   private initializePersistence(): void {
@@ -290,12 +300,12 @@ export class DownloadManager {
 
     const ytdlpPath = configManager.get('ytdlpPath');
     const downloadDir = configManager.get('defaultDownloadDir');
+    const expandedDir = this.expandPath(downloadDir);
     
     // Create filename from page title or custom name
     const titleToUse = download.stream.customName || download.stream.pageTitle;
     const safeTitle = this.createSafeFilename(titleToUse);
-    const outputTemplate = join(downloadDir, `${safeTitle}.%(ext)s`);
-    console.log('outputTemplate', outputTemplate, 'from title:', titleToUse);
+    const outputTemplate = join(expandedDir, `${safeTitle}.%(ext)s`);
     
     // Store the output template for later use
     download.outputTemplate = outputTemplate;

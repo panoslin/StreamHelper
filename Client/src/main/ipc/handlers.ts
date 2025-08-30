@@ -175,6 +175,26 @@ export class IPCHandlers {
       }
     });
 
+    // Select directory for downloads
+    ipcMain.handle(IPC_CHANNELS.SELECT_DIRECTORY, async () => {
+      try {
+        const { dialog } = require('electron');
+        const result = await dialog.showOpenDialog({
+          properties: ['openDirectory'],
+          title: 'Select Download Directory'
+        });
+
+        if (!result.canceled && result.filePaths.length > 0) {
+          return { success: true, path: result.filePaths[0] };
+        } else {
+          return { success: false, error: 'No directory selected' };
+        }
+      } catch (error) {
+        logger.error('Failed to select directory', { error });
+        return { success: false, error: (error as Error).message };
+      }
+    });
+
     logger.info('IPC handlers setup completed');
   }
 
