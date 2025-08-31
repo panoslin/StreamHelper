@@ -15,6 +15,7 @@ StreamHelper is a powerful, cross-platform desktop application designed for cont
 - **Batch Downloads**: Queue and manage multiple downloads simultaneously
 - **Smart Queue Management**: Intelligent download scheduling with priority control
 - **Cross-Platform**: Works on Windows, macOS, and Linux
+- **yt-dlp Integration**: Built-in yt-dlp binary management for reliable downloads
 
 ### 🎯 **Advanced Download Management**
 - **Concurrent Downloads**: Configurable simultaneous download limits
@@ -43,7 +44,13 @@ StreamHelper/
 │   │   ├── main/          # Main Process (Electron)
 │   │   ├── renderer/      # Renderer Process (Angular)
 │   │   └── shared/        # Shared Utilities & Types
+│   ├── scripts/           # Build and utility scripts
+│   │   └── update-binaries.js  # yt-dlp binary downloader
 │   └── dist/              # Built Application
+│       └── bin/           # yt-dlp binaries (auto-downloaded)
+│           ├── darwin/     # macOS binaries
+│           ├── linux/      # Linux binaries
+│           └── win32/      # Windows binaries
 ├── Extension/             # Chrome Extension
 │   ├── background/        # Service Worker
 │   ├── content/           # Content Scripts
@@ -64,6 +71,7 @@ StreamHelper/
 - Node.js 18+ and npm
 - Git
 - Chrome browser (for extension)
+- yt-dlp binary (automatically downloaded during setup)
 
 ### **Installation**
 
@@ -79,7 +87,13 @@ StreamHelper/
    npm install
    ```
 
-3. **Build the application**
+3. **Download yt-dlp binaries**
+   ```bash
+   # This downloads the latest yt-dlp binaries for all platforms
+   node scripts/update-binaries.js
+   ```
+
+4. **Build the application**
    ```bash
    npm run build
    ```
@@ -88,6 +102,34 @@ StreamHelper/
    ```bash
    npm start
    ```
+
+### **yt-dlp Binary Management**
+
+StreamHelper automatically downloads and manages the latest yt-dlp binaries for all supported platforms:
+
+#### **Automatic Binary Download**
+```bash
+# Download latest yt-dlp binaries for all platforms
+node scripts/update-binaries.js
+```
+
+#### **Supported Platforms**
+- **macOS**: `yt-dlp_macos` binary
+- **Linux**: `yt-dlp_linux` binary  
+- **Windows**: `yt-dlp.exe` binary
+
+#### **Binary Locations**
+```
+Client/dist/bin/
+├── darwin/     # macOS binaries
+├── linux/      # Linux binaries
+└── win32/      # Windows binaries
+```
+
+#### **Version Management**
+- Binaries are automatically updated to the latest stable release
+- Current version: `2025.08.22`
+- Binaries are verified after download for integrity
 
 ### **Chrome Extension Setup**
 
@@ -162,7 +204,13 @@ StreamHelper/
    npm install -g @angular/cli
    ```
 
-2. **Start development server**
+2. **Download yt-dlp binaries**
+   ```bash
+   # Required for development and testing
+   node scripts/update-binaries.js
+   ```
+
+3. **Start development server**
    ```bash
    npm run dev
    ```
@@ -213,6 +261,43 @@ npm run test:coverage
 - **Unit Tests**: Component and service testing
 - **Integration Tests**: Service integration testing
 - **E2E Tests**: End-to-end user workflow testing
+
+## 🔧 Troubleshooting
+
+### **Common Issues**
+
+#### **yt-dlp Binary Not Found**
+```bash
+# Error: yt-dlp binary not found
+# Solution: Download the binaries first
+node scripts/update-binaries.js
+```
+
+#### **Binary Permission Issues (macOS/Linux)**
+```bash
+# Error: Permission denied when running yt-dlp
+# Solution: Make binary executable
+chmod +x Client/dist/bin/darwin/yt-dlp
+chmod +x Client/dist/bin/linux/yt-dlp
+```
+
+#### **Download Failures**
+```bash
+# If binary download fails, check:
+# 1. Internet connection
+# 2. GitHub access
+# 3. Firewall settings
+# 4. Try running the script again
+node scripts/update-binaries.js
+```
+
+### **Binary Verification**
+```bash
+# Verify downloaded binaries work correctly
+Client/dist/bin/darwin/yt-dlp --version    # macOS
+Client/dist/bin/linux/yt-dlp --version     # Linux
+Client/dist/bin/win32/yt-dlp.exe --version # Windows
+```
 
 ## 📦 Building & Distribution
 
