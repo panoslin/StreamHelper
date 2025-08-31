@@ -2,6 +2,8 @@
 
 > **Professional Stream Capture & Download Management System**
 
+> ⚠️ **LEGAL DISCLAIMER**: This software is provided for educational and research purposes only. Users are responsible for ensuring compliance with all applicable laws, terms of service, and copyright regulations in their jurisdiction.
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Platform: Cross-Platform](https://img.shields.io/badge/Platform-Cross--Platform-blue.svg)](https://github.com/panoslin/StreamHelper)
 [![Electron: Latest](https://img.shields.io/badge/Electron-Latest-green.svg)](https://electronjs.org/)
@@ -34,6 +36,34 @@ StreamHelper is a powerful, cross-platform desktop application designed for cont
 - **WebSocket Integration**: Real-time communication with browser extensions
 - **Configurable Settings**: Customizable download directories and preferences
 - **Error Handling**: Robust error handling with user-friendly messages
+
+## ⚖️ **Legal Information & Disclaimers**
+
+### **Intended Use**
+StreamHelper is designed for **legitimate purposes only**, including:
+- **Educational Research**: Academic studies and learning
+- **Content Analysis**: Research and analysis of publicly available content
+- **Personal Archiving**: Personal backup of content you own or have rights to
+- **Testing & Development**: Software testing and development purposes
+
+### **Prohibited Uses**
+**DO NOT USE** this software for:
+- **Copyright Infringement**: Downloading copyrighted content without permission
+- **Commercial Piracy**: Unauthorized distribution of copyrighted materials
+- **Terms of Service Violations**: Violating website terms of service
+- **Illegal Activities**: Any activities prohibited by law
+
+### **User Responsibility**
+- **Compliance**: Users must comply with all applicable laws and regulations
+- **Terms of Service**: Respect website terms of service and usage policies
+- **Copyright**: Only download content you have rights to access
+- **Jurisdiction**: Be aware of laws in your country/region
+
+### **No Warranty**
+- **Educational Purpose**: Software provided "as-is" for educational use
+- **No Liability**: Developers are not responsible for user actions
+- **Legal Compliance**: Users must ensure their own legal compliance
+- **Risk**: Use at your own risk and discretion
 
 ## 🏗️ Architecture
 
@@ -143,6 +173,8 @@ Client/dist/bin/
    - Default WebSocket port: `8080`
 
 ## 📖 Usage
+
+> ⚠️ **IMPORTANT**: Before using StreamHelper, ensure you have the legal right to access and download the content. This tool is for legitimate, authorized use only.
 
 ### **Basic Workflow**
 
@@ -324,6 +356,8 @@ npm run build:all
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
+> ⚠️ **LEGAL NOTICE**: By contributing to this project, you agree that your contributions will be used for educational and research purposes only. Contributors must not use this software for illegal activities.
+
 ### **Development Guidelines**
 - Follow Angular style guide
 - Use TypeScript strict mode
@@ -340,6 +374,41 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## ⚖️ **Comprehensive Legal Disclaimer**
+
+### **Educational Use Only**
+StreamHelper is developed and distributed **exclusively for educational and research purposes**. The software is intended to help users understand:
+- Web technologies and streaming protocols
+- Network request analysis and debugging
+- Software development and testing methodologies
+- Content delivery network (CDN) operations
+
+### **No Commercial Intent**
+- **No Profit Motive**: This project is not intended for commercial use
+- **Open Source**: Released under MIT license for educational purposes
+- **Research Focus**: Designed for academic and research communities
+- **Learning Tool**: Helps developers understand streaming technologies
+
+### **Legal Compliance Required**
+Users of this software **MUST**:
+- Comply with all applicable laws and regulations
+- Respect intellectual property rights
+- Follow website terms of service
+- Obtain proper authorization before downloading content
+- Use only for legitimate, authorized purposes
+
+### **Developer Liability**
+- **No Responsibility**: Developers are not responsible for user actions
+- **Educational Purpose**: Software provided for learning and research
+- **User Risk**: Users assume all legal and compliance risks
+- **No Warranty**: Software provided "as-is" without warranties
+
+### **Jurisdictional Considerations**
+- **Local Laws**: Users must comply with laws in their jurisdiction
+- **International Use**: Different countries have different regulations
+- **Copyright Laws**: Respect copyright laws in your region
+- **Terms of Service**: Follow website policies and agreements
+
 ## 🙏 Acknowledgments
 
 - **Electron Team** for the amazing cross-platform framework
@@ -349,10 +418,24 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
+> ⚠️ **LEGAL NOTICE**: Support is provided for educational and research purposes only. We cannot assist with illegal activities or copyright violations.
+
 ### **Getting Help**
 - **Issues**: [GitHub Issues](https://github.com/panoslin/StreamHelper/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/panoslin/StreamHelper/discussions)
 - **Documentation**: [Wiki](https://github.com/panoslin/StreamHelper/wiki)
+
+### **Support Scope**
+- **Technical Issues**: Software bugs and functionality problems
+- **Educational Use**: Learning how to use the software properly
+- **Development**: Contributing to the project
+- **Research**: Academic and research applications
+
+### **What We Cannot Support**
+- **Illegal Activities**: Any use that violates laws or regulations
+- **Copyright Issues**: Questions about downloading copyrighted content
+- **Terms of Service**: Violations of website policies
+- **Commercial Use**: Business or profit-making applications
 
 <!-- ### **Community**
 - **Discord**: Join our [Discord Server](https://discord.gg/streamhelper)
