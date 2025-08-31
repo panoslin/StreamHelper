@@ -7,6 +7,11 @@ export interface StreamData {
   id?: string;
   originalPageTitle?: string;
   customName?: string;
+  requestHeaders?: Array<{
+    name: string;
+    value: string;
+  }>;
+  cookies?: string;
 }
 
 export interface DownloadItem {

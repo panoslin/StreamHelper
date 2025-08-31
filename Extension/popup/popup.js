@@ -399,13 +399,17 @@ class StreamHelperPopup {
       this.copyYtDlpCommand(request.url, request.pageTitle, request);
     });
 
-    // Add header count indicator if headers are captured
-    if (request.requestHeaders && request.requestHeaders.length > 0) {
-      // console.log('✅ Headers found in request:', {
-      //   url: request.url,
-      //   headerCount: request.requestHeaders.length,
-      //   headers: request.requestHeaders.map(h => h.name)
-      // });
+    // Add header and cookie count indicators
+    let hasHeaders = request.requestHeaders && request.requestHeaders.length > 0;
+    let hasCookies = request.cookies && request.cookies.length > 0;
+    let cookieCount = hasCookies ? request.cookies.split(';').filter(c => c.trim()).length : 0;
+    
+    if (hasHeaders) {
+      console.log('✅ Headers found in request:', {
+        url: request.url,
+        headerCount: request.requestHeaders.length,
+        headers: request.requestHeaders.map(h => h.name)
+      });
       
       const headerCount = document.createElement('span');
       headerCount.className = 'header-count';
@@ -418,32 +422,63 @@ class StreamHelperPopup {
       });
       
       ytdlpBtn.appendChild(headerCount);
+    }
+    
+    if (hasCookies) {
+      console.log('🍪 Cookies found in request:', {
+        url: request.url,
+        cookieCount: cookieCount
+      });
       
-      // // Also add a small indicator in the request info area
-      // const headerInfo = document.createElement('div');
-      // headerInfo.className = 'header-info';
-      // headerInfo.textContent = `✅ ${request.requestHeaders.length} headers captured for optimal download`;
-      // headerInfo.style.cssText = 'font-size: 10px; color: #4caf50; margin-top: 5px; font-style: italic;';
+      const cookieCountIndicator = document.createElement('span');
+      cookieCountIndicator.className = 'cookie-count';
+      cookieCountIndicator.textContent = `🍪 ${cookieCount} cookies`;
+      cookieCountIndicator.title = 'Cookies captured for authentication';
+      cookieCountIndicator.style.cssText = 'font-size: 10px; color: #8bc34a; margin-left: 5px;';
+      
+      ytdlpBtn.appendChild(cookieCountIndicator);
+    }
+    
+    // Add info indicators in the request info area
+    if (hasHeaders || hasCookies) {
+      // const infoContainer = document.createElement('div');
+      // infoContainer.style.cssText = 'margin-top: 5px;';
+      
+      // if (hasHeaders) {
+      //   const headerInfo = document.createElement('div');
+      //   headerInfo.className = 'header-info';
+      //   headerInfo.textContent = `✅ ${request.requestHeaders.length} headers captured for optimal download`;
+      //   headerInfo.style.cssText = 'font-size: 10px; color: #4caf50; margin-bottom: 3px; font-style: italic;';
+      //   infoContainer.appendChild(headerInfo);
+      // }
+      
+      // if (hasCookies) {
+      //   const cookieInfo = document.createElement('div');
+      //   cookieInfo.className = 'cookie-info';
+      //   cookieInfo.textContent = `🍪 ${cookieCount} cookies captured for authentication`;
+      //   cookieInfo.style.cssText = 'font-size: 10px; color: #8bc34a; font-style: italic;';
+      //   infoContainer.appendChild(cookieInfo);
+      // }
       
       // const requestInfo = requestItem.querySelector('.request-info');
       // if (requestInfo) {
-      //   requestInfo.appendChild(headerInfo);
+      //   requestInfo.appendChild(infoContainer);
       // }
     } else {
-      console.log('⚠️ No headers found in request:', {
+      console.log('⚠️ No headers or cookies found in request:', {
         url: request.url,
         requestKeys: Object.keys(request)
       });
       
-      // // Show warning if no headers captured
-      // const headerWarning = document.createElement('div');
-      // headerWarning.className = 'header-warning';
-      // headerWarning.textContent = '⚠️ No headers captured - using fallback headers';
-      // headerWarning.style.cssText = 'font-size: 10px; color: #ff9800; margin-top: 5px; font-style: italic;';
+      // // Show warning if no headers or cookies captured
+      // const warning = document.createElement('div');
+      // warning.className = 'header-warning';
+      // warning.textContent = '⚠️ No headers or cookies captured - using fallback values';
+      // warning.style.cssText = 'font-size: 10px; color: #ff9800; margin-top: 5px; font-style: italic;';
       
       // const requestInfo = requestItem.querySelector('.request-info');
       // if (requestInfo) {
-      //   requestInfo.appendChild(headerWarning);
+      //   requestInfo.appendChild(warning);
       // }
     }
 
@@ -885,6 +920,13 @@ class StreamHelperPopup {
       }
     }
     
+    // Add cookies for authentication if available
+    if (request.cookies && request.cookies.length > 0) {
+      command += ` --cookies-from-browser chrome`;
+      // Also add cookies as headers for maximum compatibility
+      command += ` --add-header "Cookie:${request.cookies}"`;
+    }
+    
     // Add format selection for better reliability
     command += ` --format "best[ext=mp4]/best"`;
     
@@ -1029,7 +1071,7 @@ class StreamHelperPopup {
     `;
 
     const title = document.createElement('h3');
-    title.textContent = 'Captured Request Headers';
+    title.textContent = 'Captured Request Data';
     title.style.cssText = 'margin: 0 0 15px 0; color: #333;';
 
     const subtitle = document.createElement('p');
@@ -1056,38 +1098,76 @@ class StreamHelperPopup {
     const headersList = document.createElement('div');
     headersList.style.cssText = 'margin-top: 15px;';
 
-    if (request.requestHeaders && request.requestHeaders.length > 0) {
-      request.requestHeaders.forEach(header => {
-        const headerItem = document.createElement('div');
-        headerItem.style.cssText = `
-          padding: 8px;
-          border-bottom: 1px solid #eee;
-          display: flex;
-          justify-content: space-between;
-        `;
+      // Headers section
+      if (request.requestHeaders && request.requestHeaders.length > 0) {
+        const headersTitle = document.createElement('h4');
+        headersTitle.textContent = '📋 Request Headers';
+        headersTitle.style.cssText = 'margin: 0 0 10px 0; color: #333; font-size: 14px;';
+        headersList.appendChild(headersTitle);
+        
+        request.requestHeaders.forEach(header => {
+          const headerItem = document.createElement('div');
+          headerItem.style.cssText = `
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+          `;
 
-        const headerName = document.createElement('strong');
-        headerName.textContent = header.name;
-        headerName.style.cssText = 'color: #333; min-width: 120px;';
+          const headerName = document.createElement('strong');
+          headerName.textContent = header.name;
+          headerName.style.cssText = 'color: #333; min-width: 120px;';
 
-        const headerValue = document.createElement('span');
-        headerValue.textContent = header.value;
-        headerValue.style.cssText = 'color: #666; word-break: break-all; flex: 1; margin-left: 15px;';
+          const headerValue = document.createElement('span');
+          headerValue.textContent = header.value;
+          headerValue.style.cssText = 'color: #666; word-break: break-all; flex: 1; margin-left: 15px;';
 
-        headerItem.appendChild(headerName);
-        headerItem.appendChild(headerValue);
-        headersList.appendChild(headerItem);
-      });
-    } else {
-      const noHeaders = document.createElement('p');
-      noHeaders.textContent = 'No headers captured for this request.';
-      noHeaders.style.cssText = 'color: #999; font-style: italic;';
-      headersList.appendChild(noHeaders);
-    }
+          headerItem.appendChild(headerName);
+          headerItem.appendChild(headerValue);
+          headersList.appendChild(headerItem);
+        });
+      } else {
+        const noHeaders = document.createElement('div');
+        noHeaders.textContent = 'No headers captured';
+        noHeaders.style.cssText = 'padding: 8px; color: #999; font-style: italic;';
+        headersList.appendChild(noHeaders);
+      }
 
-    const info = document.createElement('p');
-    info.textContent = 'These headers will be automatically included in yt-dlp commands and sent to StreamHelper for maximum download consistency.';
-    info.style.cssText = 'margin-top: 15px; padding: 10px; background: #f5f5f5; border-radius: 4px; font-size: 12px; color: #666;';
+      // Cookies section
+      if (request.cookies && request.cookies.length > 0) {
+        const cookiesTitle = document.createElement('h4');
+        cookiesTitle.textContent = '🍪 Cookies';
+        cookiesTitle.style.cssText = 'margin: 20px 0 10px 0; color: #333; font-size: 14px;';
+        headersList.appendChild(cookiesTitle);
+        
+        const cookies = request.cookies.split(';').filter(c => c.trim());
+        cookies.forEach(cookie => {
+          const cookieItem = document.createElement('div');
+          cookieItem.style.cssText = `
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+          `;
+
+          const cookieName = document.createElement('strong');
+          const [name, value] = cookie.trim().split('=');
+          cookieName.textContent = name || 'Unknown';
+          cookieName.style.cssText = 'color: #333; min-width: 120px;';
+
+          const cookieValue = document.createElement('span');
+          cookieValue.textContent = value || '';
+          cookieValue.style.cssText = 'color: #666; word-break: break-all; flex: 1; margin-left: 15px;';
+
+          cookieItem.appendChild(cookieName);
+          cookieItem.appendChild(cookieValue);
+          headersList.appendChild(cookieItem);
+        });
+      }
+
+          const info = document.createElement('p');
+      info.textContent = 'These headers and cookies will be automatically included in yt-dlp commands and sent to StreamHelper for maximum download consistency and authentication.';
+      info.style.cssText = 'margin-top: 15px; padding: 10px; background: #f5f5f5; border-radius: 4px; font-size: 12px; color: #666;';
 
     modalContent.appendChild(closeBtn);
     modalContent.appendChild(title);

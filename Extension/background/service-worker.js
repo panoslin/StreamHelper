@@ -352,7 +352,19 @@ async function captureM3U8RequestWithHeaders(details) {
           value: header.value
         })) : [],
       userAgent: await getUserAgent(details.tabId),
-      cookies: await getCookiesForDomain(details.url),
+      // Cookies are captured immediately, no racing condition
+      cookies: await (async () => {
+        try {
+          const urlObj = new URL(details.url);
+          const allCookies = await chrome.cookies.getAll({ domain: urlObj.hostname });
+          const cookieString = allCookies.map(cookie => `${cookie.name}=${cookie.value}`).join('; ');
+          console.log('🍪 Captured cookies for domain:', urlObj.hostname, 'count:', allCookies.length);
+          return cookieString;
+        } catch (error) {
+          console.warn('⚠️ Failed to capture cookies:', error);
+          return '';
+        }
+      })(),
       sessionStorage: await getSessionData(details.tabId)
     };
     
@@ -369,7 +381,9 @@ async function captureM3U8RequestWithHeaders(details) {
     console.log('✅ Captured m3u8 request with headers:', {
       url: details.url,
       headerCount: requestData.requestHeaders.length,
-      headers: requestData.requestHeaders.map(h => h.name)
+      headers: requestData.requestHeaders.map(h => h.name),
+      cookieCount: requestData.cookies ? requestData.cookies.split(';').filter(c => c.trim()).length : 0,
+      hasCookies: !!requestData.cookies && requestData.cookies.length > 0
     });
     
   } catch (error) {
@@ -835,7 +849,9 @@ async function downloadToStreamHelper(streamData, sendResponse) {
       url: streamData.url,
       pageTitle: streamData.pageTitle,
       headerCount: streamData.requestHeaders ? streamData.requestHeaders.length : 0,
-      hasHeaders: !!streamData.requestHeaders && streamData.requestHeaders.length > 0
+      hasHeaders: !!streamData.requestHeaders && streamData.requestHeaders.length > 0,
+      cookieCount: streamData.cookies ? streamData.cookies.split(';').filter(c => c.trim()).length : 0,
+      hasCookies: !!streamData.cookies && streamData.cookies.length > 0
     });
     
     // Send stream capture message to StreamHelper

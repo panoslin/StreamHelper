@@ -1134,3 +1134,32 @@ button:focus, input:focus {
   background: rgba(255, 152, 0, 0.1);
   border-radius: 3px;
 }
+
+/* Cookie count indicator */
+.cookie-count {
+  font-size: 10px;
+  color: #8bc34a;
+  margin-left: 5px;
+  cursor: pointer;
+  padding: 2px 4px;
+  background: rgba(139, 195, 74, 0.1);
+  border-radius: 3px;
+  transition: background-color 0.2s;
+  display: inline-block;
+}
+
+.cookie-count:hover {
+  background: rgba(139, 195, 74, 0.2);
+  color: #689f38;
+}
+
+/* Cookie info styles */
+.cookie-info {
+  font-size: 10px;
+  color: #8bc34a;
+  margin-top: 5px;
+  font-style: italic;
+  padding: 2px 4px;
+  background: rgba(139, 195, 74, 0.1);
+  border-radius: 3px;
+}

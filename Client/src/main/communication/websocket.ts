@@ -113,25 +113,12 @@ export class WebSocketManager extends EventEmitter {
         pageTitle: data.pageTitle || 'Unknown Stream',
         pageUrl: data.pageUrl || 'Unknown',
         userAgent: data.userAgent || 'Unknown',
-        timestamp: data.timestamp || Date.now()
+        timestamp: data.timestamp || Date.now(),
+        originalPageTitle: data.originalPageTitle,
+        customName: data.customName,
+        requestHeaders: data.requestHeaders || [],
+        cookies: data.cookies || ''
       };
-
-      // // Check if this stream is already being processed
-      // const existingDownload = Array.from(downloadManager.getDownloads())
-      //   .find(d => d.stream.url === stream.url);
-      
-      // if (existingDownload) {
-      //   this.sendMessage(ws, {
-      //     type: 'STREAM_ENQUEUED',
-      //     data: { 
-      //       message: 'Stream already in queue',
-      //       queuePosition: -1,
-      //       stream,
-      //       existing: true
-      //     }
-      //   });
-      //   return;
-      // }
 
       // Enqueue the stream for download
       const queuePosition = await downloadManager.enqueueStream(stream);

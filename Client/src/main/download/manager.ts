@@ -355,6 +355,84 @@ export class DownloadManager {
       '--force-overwrites' // Overwrite existing files
     ];
 
+    // Add all captured request headers for maximum download consistency
+    if (download.stream.requestHeaders && download.stream.requestHeaders.length > 0) {
+      logger.info('Using captured headers for download consistency', { 
+        downloadId: download.id, 
+        headerCount: download.stream.requestHeaders.length 
+      });
+      
+      download.stream.requestHeaders.forEach(header => {
+        // Skip some headers that might cause issues or are redundant
+        const skipHeaders = ['host', 'content-length', 'content-type'];
+        if (!skipHeaders.includes(header.name.toLowerCase())) {
+          args.push('--add-header', `${header.name}:${header.value}`);
+          logger.debug('Added header', { name: header.name, value: header.value.substring(0, 50) + '...' });
+        }
+      });
+      
+      logger.info('Total headers added to yt-dlp command', { 
+        downloadId: download.id, 
+        totalArgs: args.length 
+      });
+      
+      // Add cookies for authentication if available
+      if (download.stream.cookies && download.stream.cookies.length > 0) {
+        args.push('--cookies-from-browser', 'chrome');
+        // Also add cookies as headers for maximum compatibility
+        args.push('--add-header', `Cookie:${download.stream.cookies}`);
+        logger.info('Added cookies to yt-dlp command', { 
+          downloadId: download.id, 
+          cookieCount: download.stream.cookies.split(';').filter(c => c.trim()).length 
+        });
+      }
+    } else {
+      // Fallback to basic headers if no captured headers available
+      logger.info('No captured headers available, using fallback headers', { downloadId: download.id });
+      
+      // Add referer header if we have the page URL
+      if (download.stream.pageUrl && download.stream.pageUrl !== 'Unknown') {
+        try {
+          const pageUrl = new URL(download.stream.pageUrl);
+          const referer = `${pageUrl.protocol}//${pageUrl.host}${pageUrl.pathname}`;
+          args.push('--add-header', `Referer:${referer}`);
+        } catch (error) {
+          // If URL parsing fails, use the page URL as-is
+          args.push('--add-header', `Referer:${download.stream.pageUrl}`);
+        }
+      }
+      
+      // Add user agent header to mimic browser
+      if (download.stream.userAgent && download.stream.userAgent !== 'Unknown') {
+        args.push('--add-header', `User-Agent:${download.stream.userAgent}`);
+      } else {
+        // Fallback to realistic user agent
+        args.push('--add-header', 'User-Agent:Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+      }
+      
+      // Add origin header for CORS compliance
+      if (download.stream.pageUrl && download.stream.pageUrl !== 'Unknown') {
+        try {
+          const pageUrl = new URL(download.stream.pageUrl);
+          const origin = `${pageUrl.protocol}//${pageUrl.host}`;
+          args.push('--add-header', `Origin:${origin}`);
+        } catch (error) {
+          // If URL parsing fails, skip origin header
+        }
+      }
+      
+      // Add cookies for authentication if available
+      if (download.stream.cookies && download.stream.cookies.length > 0) {
+        args.push('--cookies-from-browser', 'chrome');
+        // Also add cookies as headers for maximum compatibility
+        args.push('--add-header', `Cookie:${download.stream.cookies}`);
+        logger.info('Added cookies to yt-dlp command (fallback)', { 
+          downloadId: download.id, 
+          cookieCount: download.stream.cookies.split(';').filter(c => c.trim()).length 
+        });
+      }
+    }
+
     // Store the full command for logging
     if (download.logs) {
       download.logs.fullCommand = `${ytdlpPath} ${args.join(' ')}`;
@@ -390,6 +468,17 @@ export class DownloadManager {
         // If URL parsing fails, skip origin header
         logger.warn('Failed to parse page URL for origin header', { error, pageUrl: download.stream.pageUrl });
       }
+    }
+    
+    // Add cookies for authentication if available (duplicate section)
+    if (download.stream.cookies && download.stream.cookies.length > 0) {
+      args.push('--cookies-from-browser', 'chrome');
+      // Also add cookies as headers for maximum compatibility
+      args.push('--add-header', `Cookie:${download.stream.cookies}`);
+      logger.info('Added cookies to yt-dlp command (duplicate section)', { 
+        downloadId: download.id, 
+        cookieCount: download.stream.cookies.split(';').filter(c => c.trim()).length 
+      });
     }
 
     try {
@@ -689,7 +778,7 @@ export class DownloadManager {
     if (download.status === 'downloading') {
       try {
         // Mark as paused first to prevent auto-restart
-        download.status = 'paused';
+      download.status = 'paused';
         
         // Clear the progress interval to stop updates
         clearInterval(activeDownload.progressInterval);
@@ -727,7 +816,7 @@ export class DownloadManager {
       return true; // Already paused, consider this a success
     } else {
       logger.warn('Cannot pause download in current status', { downloadId, status: download.status });
-      return false;
+    return false;
     }
   }
 
@@ -777,7 +866,7 @@ export class DownloadManager {
     // Save to persistence
     this.saveDownloads();
     
-    return true;
+      return true;
   } catch (error) {
       logger.error('Failed to resume download', { downloadId, error });
       return false;
@@ -812,7 +901,7 @@ export class DownloadManager {
     
     // Save to persistence
     this.saveDownloads();
-    
+
     return false;
   } catch (error) {
       logger.error('Failed to restart download', { downloadId, error });
