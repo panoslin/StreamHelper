@@ -1095,3 +1095,42 @@ button:focus, input:focus {
 .copy-btn:hover, .ytdlp-btn:hover, .streamhelper-btn:hover {
   animation: none;
 }
+
+/* Header count indicator */
+.header-count {
+  font-size: 10px;
+  color: #666;
+  margin-left: 5px;
+  cursor: pointer;
+  padding: 2px 4px;
+  background: #f0f0f0;
+  border-radius: 3px;
+  transition: background-color 0.2s;
+  display: inline-block;
+}
+
+.header-count:hover {
+  background: #e0e0e0;
+  color: #333;
+}
+
+/* Header info and warning styles */
+.header-info {
+  font-size: 10px;
+  color: #4caf50;
+  margin-top: 5px;
+  font-style: italic;
+  padding: 2px 4px;
+  background: rgba(76, 175, 80, 0.1);
+  border-radius: 3px;
+}
+
+.header-warning {
+  font-size: 10px;
+  color: #ff9800;
+  margin-top: 5px;
+  font-style: italic;
+  padding: 2px 4px;
+  background: rgba(255, 152, 0, 0.1);
+  border-radius: 3px;
+}

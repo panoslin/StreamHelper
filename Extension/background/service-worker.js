@@ -264,17 +264,35 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 /**
  * Intercept all web requests to capture m3u8 URLs
  * This is the core functionality that monitors network traffic
+ * We capture both the request and headers in one place to avoid racing conditions
  */
-chrome.webRequest.onBeforeRequest.addListener(
+chrome.webRequest.onBeforeSendHeaders.addListener(
   (details) => {
     // Check if the request URL contains m3u8
     if (details.url && details.url.includes('.m3u8')) {
-      captureM3U8Request(details);
+      captureM3U8RequestWithHeaders(details);
     }
   },
   { urls: ["<all_urls>"] },
-  ["requestBody"]
+  ["requestHeaders"]
 );
+
+// /**
+//  * Fallback listener for requests that might not have headers
+//  * This ensures we don't miss any m3u8 requests
+//  */
+// chrome.webRequest.onBeforeRequest.addListener(
+//   (details) => {
+//     // Check if the request URL contains m3u8
+//     if (details.url && details.url.includes('.m3u8')) {
+//       // Only capture if we haven't already captured it with headers
+//       // This prevents duplicate captures
+//       captureM3U8RequestFallback(details);
+//     }
+//   },
+//   { urls: ["<all_urls>"] },
+//   ["requestBody"]
+// );
 
 /**
  * Intercept response headers to capture content length
@@ -294,7 +312,7 @@ chrome.webRequest.onResponseStarted.addListener(
  * Capture m3u8 request details and store them
  * @param {Object} details - Request details from Chrome webRequest API
  */
-async function captureM3U8Request(details) {
+async function captureM3U8RequestWithHeaders(details) {
   try {
     // Get current timestamp
     const timestamp = new Date().toISOString();
@@ -314,8 +332,25 @@ async function captureM3U8Request(details) {
       requestId: details.requestId,
       pageTitle: tab.title,
       pageUrl: tab.url,
-      // New fields for better context
-      requestHeaders: [], // Will be populated later if needed
+      // Headers are captured immediately, no racing condition
+      requestHeaders: details.requestHeaders ? details.requestHeaders
+        .filter(header => {
+          // Include important headers for download consistency
+          const importantHeaders = [
+            'accept', 'accept-encoding', 'accept-language', 'cache-control',
+            'connection', 'dnt', 'pragma', 'referer', 'sec-ch-ua',
+            'sec-ch-ua-mobile', 'sec-ch-ua-platform', 'sec-fetch-dest',
+            'sec-fetch-mode', 'sec-fetch-site', 'upgrade-insecure-requests',
+            'user-agent', 'x-requested-with', 'origin', 'authorization',
+            'cookie', 'x-csrf-token', 'x-xsrf-token'
+          ];
+          
+          return importantHeaders.includes(header.name.toLowerCase());
+        })
+        .map(header => ({
+          name: header.name.toLowerCase(),
+          value: header.value
+        })) : [],
       userAgent: await getUserAgent(details.tabId),
       cookies: await getCookiesForDomain(details.url),
       sessionStorage: await getSessionData(details.tabId)
@@ -330,10 +365,72 @@ async function captureM3U8Request(details) {
     // Notify any listening popups about the new request
     notifyPopupAboutNewRequest(requestData);
     
+    // Log successful header capture
+    console.log('✅ Captured m3u8 request with headers:', {
+      url: details.url,
+      headerCount: requestData.requestHeaders.length,
+      headers: requestData.requestHeaders.map(h => h.name)
+    });
+    
   } catch (error) {
-    console.error('Error capturing m3u8 request:', error);
+    console.error('Error capturing m3u8 request with headers:', error);
   }
 }
+
+// /**
+//  * Fallback function for capturing m3u8 requests without headers
+//  * This prevents duplicate captures and ensures we don't miss any requests
+//  * @param {Object} details - Request details from Chrome webRequest API
+//  */
+// async function captureM3U8RequestFallback(details) {
+//   try {
+//     // Check if we already captured this request with headers
+//     const result = await chrome.storage.local.get([STORAGE_KEY]);
+//     const requests = result[STORAGE_KEY] || [];
+    
+//     // Check if this URL was already captured recently (within 5 seconds)
+//     const existingRequest = requests.find(req => 
+//       req.url === details.url && 
+//       (Date.now() - new Date(req.timestamp).getTime()) < 5000
+//     );
+    
+//     if (existingRequest) {
+//       // Request already captured with headers, skip
+//       console.log('⏭️ Skipping duplicate request capture (already captured with headers):', details.url);
+//       return;
+//     }
+    
+//     // If no existing request, capture it without headers
+//     console.log('⚠️ Capturing m3u8 request without headers (fallback):', details.url);
+    
+//     const timestamp = new Date().toISOString();
+//     const tab = await chrome.tabs.get(details.tabId);
+    
+//     const requestData = {
+//       id: generateUniqueId(),
+//       url: details.url,
+//       timestamp: timestamp,
+//       method: details.method,
+//       type: details.type,
+//       tabId: details.tabId,
+//       frameId: details.frameId,
+//       requestId: details.requestId,
+//       pageTitle: tab.title,
+//       pageUrl: tab.url,
+//       requestHeaders: [], // No headers available
+//       userAgent: await getUserAgent(details.tabId),
+//       cookies: await getCookiesForDomain(details.url),
+//       sessionStorage: await getSessionData(details.tabId)
+//     };
+    
+//     await storeM3U8Request(requestData);
+//     await storeRequestIdMapping(details.requestId, requestData.id, details.url);
+//     notifyPopupAboutNewRequest(requestData);
+    
+//   } catch (error) {
+//     console.error('Error in fallback m3u8 request capture:', error);
+//   }
+// }
 
 /**
  * Store m3u8 request in Chrome storage
@@ -561,7 +658,7 @@ async function updateM3U8RequestSize(details) {
         requestIndex = requests.findIndex(req => req.id === mapping.ourRequestId);
         
         if (requestIndex !== -1) {
-          console.log(`✅ Size update: Found request via ID mapping for: ${details.url}`);
+          // console.log(`✅ Size update: Found request via ID mapping for: ${details.url}`);
         }
       }
     } catch (e) {
@@ -637,18 +734,6 @@ async function updateM3U8RequestSize(details) {
       } catch (e) {
         // URL parsing failed
       }
-    }
-    
-    // Log matching result for debugging
-    if (requestIndex !== -1) {
-      console.log(`✅ Size update: Found request at index ${requestIndex} for URL: ${details.url}`);
-    } else {
-      console.log(`❌ Size update: No matching request found for URL: ${details.url}`);
-      console.log(`Available requests:`, requests.map(req => ({
-        url: req.url,
-        timestamp: req.timestamp,
-        age: Date.now() - new Date(req.timestamp).getTime()
-      })));
     }
     
     if (requestIndex !== -1) {
@@ -745,6 +830,14 @@ async function downloadToStreamHelper(streamData, sendResponse) {
       return;
     }
 
+    // Log what we're sending to StreamHelper
+    console.log('📤 Sending to StreamHelper:', {
+      url: streamData.url,
+      pageTitle: streamData.pageTitle,
+      headerCount: streamData.requestHeaders ? streamData.requestHeaders.length : 0,
+      hasHeaders: !!streamData.requestHeaders && streamData.requestHeaders.length > 0
+    });
+    
     // Send stream capture message to StreamHelper
     const success = sendWebSocketMessage({
       type: 'STREAM_CAPTURED',

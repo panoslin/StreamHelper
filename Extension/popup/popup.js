@@ -399,6 +399,54 @@ class StreamHelperPopup {
       this.copyYtDlpCommand(request.url, request.pageTitle, request);
     });
 
+    // Add header count indicator if headers are captured
+    if (request.requestHeaders && request.requestHeaders.length > 0) {
+      // console.log('✅ Headers found in request:', {
+      //   url: request.url,
+      //   headerCount: request.requestHeaders.length,
+      //   headers: request.requestHeaders.map(h => h.name)
+      // });
+      
+      const headerCount = document.createElement('span');
+      headerCount.className = 'header-count';
+      headerCount.textContent = `📋 ${request.requestHeaders.length} headers`;
+      headerCount.title = 'Click to view captured headers';
+      headerCount.style.cssText = 'font-size: 10px; color: #666; margin-left: 5px; cursor: pointer;';
+      
+      headerCount.addEventListener('click', () => {
+        this.showHeadersModal(request);
+      });
+      
+      ytdlpBtn.appendChild(headerCount);
+      
+      // // Also add a small indicator in the request info area
+      // const headerInfo = document.createElement('div');
+      // headerInfo.className = 'header-info';
+      // headerInfo.textContent = `✅ ${request.requestHeaders.length} headers captured for optimal download`;
+      // headerInfo.style.cssText = 'font-size: 10px; color: #4caf50; margin-top: 5px; font-style: italic;';
+      
+      // const requestInfo = requestItem.querySelector('.request-info');
+      // if (requestInfo) {
+      //   requestInfo.appendChild(headerInfo);
+      // }
+    } else {
+      console.log('⚠️ No headers found in request:', {
+        url: request.url,
+        requestKeys: Object.keys(request)
+      });
+      
+      // // Show warning if no headers captured
+      // const headerWarning = document.createElement('div');
+      // headerWarning.className = 'header-warning';
+      // headerWarning.textContent = '⚠️ No headers captured - using fallback headers';
+      // headerWarning.style.cssText = 'font-size: 10px; color: #ff9800; margin-top: 5px; font-style: italic;';
+      
+      // const requestInfo = requestItem.querySelector('.request-info');
+      // if (requestInfo) {
+      //   requestInfo.appendChild(headerWarning);
+      // }
+    }
+
     // Set up StreamHelper button
     const streamhelperBtn = requestItem.querySelector('.streamhelper-btn');
     
@@ -793,34 +841,47 @@ class StreamHelperPopup {
     command += ` --ignore-errors`; // Continue on errors
     command += ` --retries 3`; // Retry failed downloads
     
-    // Add referer header if we have the page URL
-    if (request.pageUrl && request.pageUrl !== 'Unknown') {
-      try {
-        const pageUrl = new URL(request.pageUrl);
-        const referer = `${pageUrl.protocol}//${pageUrl.host}${pageUrl.pathname}`;
-        command += ` --add-header "Referer:${referer}"`;
-      } catch (error) {
-        // If URL parsing fails, use the page URL as-is
-        command += ` --add-header "Referer:${request.pageUrl}"`;
-      }
-    }
-    
-    // Add user agent header to mimic browser
-    if (request.userAgent && request.userAgent !== 'Unknown') {
-      command += ` --add-header "User-Agent:${request.userAgent}"`;
+    // Add all captured request headers for maximum consistency
+    if (request.requestHeaders && request.requestHeaders.length > 0) {
+      request.requestHeaders.forEach(header => {
+        // Skip some headers that might cause issues or are redundant
+        const skipHeaders = ['host', 'content-length', 'content-type'];
+        if (!skipHeaders.includes(header.name)) {
+          command += ` --add-header "${header.name}:${header.value}"`;
+        }
+      });
     } else {
-      // Fallback to realistic user agent
-      command += ` --add-header "User-Agent:Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"`;
-    }
-    
-    // Add origin header for CORS compliance
-    if (request.pageUrl && request.pageUrl !== 'Unknown') {
-      try {
-        const pageUrl = new URL(request.pageUrl);
-        const origin = `${pageUrl.protocol}//${pageUrl.host}`;
-        command += ` --add-header "Origin:${origin}"`;
-      } catch (error) {
-        // If URL parsing fails, skip origin header
+      // Fallback to basic headers if no captured headers available
+      
+      // Add referer header if we have the page URL
+      if (request.pageUrl && request.pageUrl !== 'Unknown') {
+        try {
+          const pageUrl = new URL(request.pageUrl);
+          const referer = `${pageUrl.protocol}//${pageUrl.host}${pageUrl.pathname}`;
+          command += ` --add-header "Referer:${referer}"`;
+        } catch (error) {
+          // If URL parsing fails, use the page URL as-is
+          command += ` --add-header "Referer:${request.pageUrl}"`;
+        }
+      }
+      
+      // Add user agent header to mimic browser
+      if (request.userAgent && request.userAgent !== 'Unknown') {
+        command += ` --add-header "User-Agent:${request.userAgent}"`;
+      } else {
+        // Fallback to realistic user agent
+        command += ` --add-header "User-Agent:Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"`;
+      }
+      
+      // Add origin header for CORS compliance
+      if (request.pageUrl && request.pageUrl !== 'Unknown') {
+        try {
+          const pageUrl = new URL(request.pageUrl);
+          const origin = `${pageUrl.protocol}//${pageUrl.host}`;
+          command += ` --add-header "Origin:${origin}"`;
+        } catch (error) {
+          // If URL parsing fails, skip origin header
+        }
       }
     }
     
@@ -844,13 +905,12 @@ class StreamHelperPopup {
    * @param {Object} request - The full request object with browser context
    */
   async copyYtDlpCommand(url, title, request) {
+    const command = this.generateYtDlpCommand(url, title, request);
     try {
-      const command = this.generateYtDlpCommand(url, title, request);
       await navigator.clipboard.writeText(command);
       this.showToast('Enhanced yt-dlp command copied to clipboard!', 'success');
     } catch (error) {
       // Fallback for older browsers
-      const command = this.generateYtDlpCommand(url, title, request);
       const textArea = document.createElement('textarea');
       textArea.value = command;
       document.body.appendChild(textArea);
@@ -938,6 +998,122 @@ class StreamHelperPopup {
   }
 
   /**
+   * Show a modal displaying all captured request headers
+   * @param {Object} request - The request object with headers
+   */
+  showHeadersModal(request) {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+    `;
+
+    const modalContent = document.createElement('div');
+    modalContent.style.cssText = `
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    `;
+
+    const title = document.createElement('h3');
+    title.textContent = 'Captured Request Headers';
+    title.style.cssText = 'margin: 0 0 15px 0; color: #333;';
+
+    const subtitle = document.createElement('p');
+    subtitle.textContent = `URL: ${request.url}`;
+    subtitle.style.cssText = 'margin: 0 0 15px 0; color: #666; font-size: 12px; word-break: break-all;';
+
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '✕';
+    closeBtn.style.cssText = `
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      color: #999;
+    `;
+
+    closeBtn.addEventListener('click', () => {
+      document.body.removeChild(modal);
+    });
+
+    const headersList = document.createElement('div');
+    headersList.style.cssText = 'margin-top: 15px;';
+
+    if (request.requestHeaders && request.requestHeaders.length > 0) {
+      request.requestHeaders.forEach(header => {
+        const headerItem = document.createElement('div');
+        headerItem.style.cssText = `
+          padding: 8px;
+          border-bottom: 1px solid #eee;
+          display: flex;
+          justify-content: space-between;
+        `;
+
+        const headerName = document.createElement('strong');
+        headerName.textContent = header.name;
+        headerName.style.cssText = 'color: #333; min-width: 120px;';
+
+        const headerValue = document.createElement('span');
+        headerValue.textContent = header.value;
+        headerValue.style.cssText = 'color: #666; word-break: break-all; flex: 1; margin-left: 15px;';
+
+        headerItem.appendChild(headerName);
+        headerItem.appendChild(headerValue);
+        headersList.appendChild(headerItem);
+      });
+    } else {
+      const noHeaders = document.createElement('p');
+      noHeaders.textContent = 'No headers captured for this request.';
+      noHeaders.style.cssText = 'color: #999; font-style: italic;';
+      headersList.appendChild(noHeaders);
+    }
+
+    const info = document.createElement('p');
+    info.textContent = 'These headers will be automatically included in yt-dlp commands and sent to StreamHelper for maximum download consistency.';
+    info.style.cssText = 'margin-top: 15px; padding: 10px; background: #f5f5f5; border-radius: 4px; font-size: 12px; color: #666;';
+
+    modalContent.appendChild(closeBtn);
+    modalContent.appendChild(title);
+    modalContent.appendChild(subtitle);
+    modalContent.appendChild(headersList);
+    modalContent.appendChild(info);
+
+    modal.appendChild(modalContent);
+    document.body.appendChild(modal);
+
+    // Close on overlay click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        document.body.removeChild(modal);
+      }
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.body.removeChild(modal);
+      }
+    });
+  }
+
+  /**
    * Download stream to StreamHelper desktop app
    * @param {Object} request - The request object to download
    * @param {string} customName - Custom video name (optional)
@@ -957,7 +1133,10 @@ class StreamHelperPopup {
           customName: customName, // Include custom name flag
           timestamp: Date.now(),
           tabId: request.tabId,
-          pageUrl: request.pageUrl
+          pageUrl: request.pageUrl,
+          // Include captured headers for maximum download consistency
+          requestHeaders: request.requestHeaders || [],
+          userAgent: request.userAgent || 'Unknown'
         }
       });
 
