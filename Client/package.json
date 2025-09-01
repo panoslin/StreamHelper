@@ -16,11 +16,18 @@
     "electron:debug": "npm run build && electron --inspect=5858 .",
     "package:current": "electron-builder",
     "package:all": "electron-builder -mwl",
+    "package:mac": "electron-builder --mac",
+    "package:win": "electron-builder --win",
+    "package:linux": "electron-builder --linux",
     "build:app": "./scripts/build-app.sh",
     "update-binaries": "node scripts/update-binaries.js"
   },
   "keywords": ["electron", "angular", "streaming", "downloads", "yt-dlp"],
-  "author": "StreamHelper Team",
+  "author": {
+    "name": "StreamHelper Team",
+    "email": "lghpanos@gmail.com"
+  },
+  "homepage": "https://github.com/panoslin/StreamHelper",
   "license": "MIT",
   "devDependencies": {
     "@angular-devkit/build-angular": "^16.0.0",
@@ -58,13 +65,44 @@
     ],
     "mac": {
       "category": "public.app-category.utilities",
-      "target": "dmg"
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ]
     },
     "win": {
-      "target": "dir"
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64", "ia32"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64", "ia32"]
+        }
+      ]
     },
     "linux": {
-      "target": "dir"
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "maintainer": "team@streamhelper.app",
+      "category": "Utility"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
     },
     "asar": false
   }
