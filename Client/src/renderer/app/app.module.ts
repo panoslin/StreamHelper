@@ -28,6 +28,7 @@ import { SettingsComponent } from './pages/settings/settings.component';
 import { DownloadItemComponent } from './components/download-item/download-item.component';
 import { StreamItemComponent } from './components/stream-item/stream-item.component';
 import { ProgressBarComponent } from './components/progress-bar/progress-bar.component';
+import { ToastComponent } from './components/toast/toast.component';
 
 // Services
 import { DownloadService } from './services/download.service';
@@ -49,7 +50,8 @@ const routes: Routes = [
     SettingsComponent,
     DownloadItemComponent,
     StreamItemComponent,
-    ProgressBarComponent
+    ProgressBarComponent,
+    ToastComponent
   ],
   imports: [
     BrowserModule,

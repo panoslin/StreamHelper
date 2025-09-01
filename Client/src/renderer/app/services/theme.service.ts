@@ -66,6 +66,24 @@ export class ThemeService {
     }
   }
 
+  applyTheme(theme: Theme): void {
+    this.currentThemeSubject.next(theme);
+    
+    // Remove existing theme classes
+    this.renderer.removeClass(this.document.body, 'light-theme');
+    this.renderer.removeClass(this.document.body, 'dark-theme');
+    
+    // Apply new theme
+    if (theme === 'dark') {
+      this.applyDarkTheme();
+    } else if (theme === 'light') {
+      this.applyLightTheme();
+    } else {
+      // Auto theme - check system preference
+      this.checkSystemTheme();
+    }
+  }
+
   private applyDarkTheme(): void {
     this.renderer.addClass(this.document.body, 'dark-theme');
     this.renderer.setAttribute(this.document.documentElement, 'data-theme', 'dark');

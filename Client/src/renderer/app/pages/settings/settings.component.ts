@@ -1,6 +1,7 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { ConfigService } from '../../services/config.service';
 import { ThemeService } from '../../services/theme.service';
+import { ToastService } from '../../services/toast.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -295,23 +296,24 @@ export class SettingsComponent implements OnInit, OnDestroy {
   maxConcurrentDownloads = 3;
   theme: 'light' | 'dark' | 'auto' = 'auto';
   isDarkMode = false;
-  private configSubscription?: Subscription;
   private themeSubscription?: Subscription;
 
   constructor(
     private configService: ConfigService,
-    private themeService: ThemeService
+    private themeService: ThemeService,
+    private toastService: ToastService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
-    this.configSubscription = this.configService.config$.subscribe(config => {
-      if (config) {
-        this.webSocketPort = config.webSocketPort;
-        this.downloadDirectory = config.defaultDownloadDir;
-        this.maxConcurrentDownloads = config.maxConcurrentDownloads;
-        this.theme = config.theme || 'auto';
-      }
-    });
+    // Load initial config
+    const currentConfig = this.configService.getConfig();
+    if (currentConfig) {
+      this.webSocketPort = currentConfig.webSocketPort;
+      this.downloadDirectory = currentConfig.defaultDownloadDir;
+      this.maxConcurrentDownloads = currentConfig.maxConcurrentDownloads;
+      this.theme = currentConfig.theme || 'auto';
+    }
 
     // Subscribe to theme changes
     this.themeSubscription = this.themeService.isDarkMode$.subscribe(isDark => {
@@ -320,9 +322,6 @@ export class SettingsComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.configSubscription) {
-      this.configSubscription.unsubscribe();
-    }
     if (this.themeSubscription) {
       this.themeSubscription.unsubscribe();
     }
@@ -333,9 +332,13 @@ export class SettingsComponent implements OnInit, OnDestroy {
       const result = await (window as any).electronAPI.selectDirectory();
       if (result.success && result.path) {
         this.downloadDirectory = result.path;
+        this.toastService.showSuccess('Download directory updated');
+      } else {
+        this.toastService.showError('Failed to select directory');
       }
     } catch (error) {
       console.error('Failed to browse directory:', error);
+      this.toastService.showError('Failed to browse directory: ' + (error as Error).message);
     }
   }
 
@@ -348,15 +351,18 @@ export class SettingsComponent implements OnInit, OnDestroy {
       const success = await this.configService.updateConfig({
         webSocketPort: this.webSocketPort,
         defaultDownloadDir: this.downloadDirectory,
-        maxConcurrentDownloads: this.maxConcurrentDownloads
+        maxConcurrentDownloads: this.maxConcurrentDownloads,
+        theme: this.theme
       });
 
       if (success) {
-        // Show success message (you can add a toast service here)
-        console.log('Settings saved successfully');
+        this.toastService.showSuccess('Settings saved successfully');
+      } else {
+        this.toastService.showError('Failed to save settings');
       }
     } catch (error) {
       console.error('Failed to save settings:', error);
+      this.toastService.showError('Failed to save settings: ' + (error as Error).message);
     }
   }
 
@@ -365,10 +371,20 @@ export class SettingsComponent implements OnInit, OnDestroy {
       const success = await this.configService.resetToDefaults();
       if (success) {
         // Reload current config
-        this.ngOnInit();
+        const currentConfig = this.configService.getConfig();
+        if (currentConfig) {
+          this.webSocketPort = currentConfig.webSocketPort;
+          this.downloadDirectory = currentConfig.defaultDownloadDir;
+          this.maxConcurrentDownloads = currentConfig.maxConcurrentDownloads;
+          this.theme = currentConfig.theme || 'auto';
+        }
+        this.toastService.showSuccess('Settings reset to defaults');
+      } else {
+        this.toastService.showError('Failed to reset settings');
       }
     } catch (error) {
       console.error('Failed to reset settings:', error);
+      this.toastService.showError('Failed to reset settings: ' + (error as Error).message);
     }
   }
 }

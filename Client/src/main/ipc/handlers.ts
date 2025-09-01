@@ -23,7 +23,7 @@ export class IPCHandlers {
     });
 
     ipcMain.handle(IPC_CHANNELS.UPDATE_CONFIG, (event, updates: any) => {
-      configManager.updateConfig(updates);
+      const success = configManager.updateConfig(updates);
       
       // Apply theme changes immediately if theme was updated
       if (updates.theme) {
@@ -41,7 +41,7 @@ export class IPCHandlers {
         });
       }
       
-      return { success: true };
+      return { success };
     });
 
     // Download handlers
