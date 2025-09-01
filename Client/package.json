@@ -72,6 +72,9 @@
           "target": "dmg",
           "arch": ["x64", "arm64"]
         }
+      ],
+      "asarUnpack": [
+        "dist/bin/darwin/**/*"
       ]
     },
     "win": {
@@ -85,6 +88,9 @@
           "target": "portable",
           "arch": ["x64", "ia32"]
         }
+      ],
+      "asarUnpack": [
+        "dist/bin/win32/**/*"
       ]
     },
     "linux": {
@@ -100,7 +106,10 @@
         }
       ],
       "maintainer": "team@streamhelper.app",
-      "category": "Utility"
+      "category": "Utility",
+      "asarUnpack": [
+        "dist/bin/linux/**/*"
+      ]
     },
     "nsis": {
       "oneClick": false,
@@ -109,9 +118,6 @@
       "createStartMenuShortcut": true
     },
     "asar": true,
-    "asarUnpack": [
-      "dist/bin/**/*"
-    ],
     "compression": "maximum",
     "removePackageScripts": true,
     "removePackageKeywords": true
