@@ -6,7 +6,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   webSocketPort: 8080,
   maxConcurrentDownloads: 3,
   defaultDownloadDir: '~/Downloads/StreamHelper',
-  ytdlpPath: '',
+  ytdlpPath: '', // Will be set by ConfigManager.ensureBinaryPath()
   autoStartDownloads: true,
   notifications: true,
   appDataPath: '~/.streamhelper',

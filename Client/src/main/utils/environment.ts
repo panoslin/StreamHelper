@@ -1,7 +1,6 @@
 import { platform as osPlatform } from 'os';
 import { join } from 'path';
 import { app } from 'electron';
-import { getBinaryPath } from '../../shared/utils';
 
 export function getEnvironmentInfo() {
   return {
@@ -16,7 +15,15 @@ export function getEnvironmentInfo() {
 }
 
 export function getBinaryInfo() {
-  const binaryPath = getBinaryPath();
+  // Use the same corrected path resolution logic as ConfigManager
+  const platform = process.platform;
+  const binaryName = platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp';
+  
+  // In bundled apps, app.getAppPath() points to the app directory inside Resources
+  // The binaries are located at app/dist/bin/{platform}/{binaryName}
+  const appPath = app.getAppPath();
+  const binaryPath = join(appPath, 'dist', 'bin', platform, binaryName);
+  
   const currentPlatform = osPlatform();
   
   return {

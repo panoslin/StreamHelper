@@ -46,9 +46,18 @@ export class ConfigManager {
 
   private ensureBinaryPath(): void {
     if (!this.config.ytdlpPath) {
-      const { getBinaryPath } = require('../../shared/utils');
-      this.config.ytdlpPath = getBinaryPath();
+      // Use Electron's app path and platform detection for bundled app
+      const platform = process.platform;
+      const binaryName = platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp';
+      
+      // In bundled apps, app.getAppPath() points to the app directory inside Resources
+      // The binaries are located at app/dist/bin/{platform}/{binaryName}
+      const appPath = app.getAppPath();
+      const binaryPath = join(appPath, 'dist', 'bin', platform, binaryName);
+      
+      this.config.ytdlpPath = binaryPath;
       this.saveConfig();
+      logger.info('Binary path set', { path: binaryPath, platform, appPath });
     }
   }
 
