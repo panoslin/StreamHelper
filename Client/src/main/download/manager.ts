@@ -24,6 +24,101 @@ export class DownloadManager {
     this.startAutoSave();
   }
 
+  /**
+   * Find a working FFmpeg binary by checking bundled path first, then system PATH
+   */
+  private findWorkingFfmpeg(): string | null {
+    // First check the bundled FFmpeg path from config
+    const bundledFfmpegPath = configManager.get('ffmpegPath');
+    if (bundledFfmpegPath && bundledFfmpegPath.trim() && existsSync(bundledFfmpegPath)) {
+      // Test if the bundled FFmpeg is actually executable
+      try {
+        const { execSync } = require('child_process');
+        execSync(`"${bundledFfmpegPath}" -version`, { stdio: 'ignore' });
+        logger.info('Using bundled FFmpeg binary', { path: bundledFfmpegPath });
+        return bundledFfmpegPath;
+      } catch (error) {
+        logger.debug('Bundled FFmpeg binary is not executable', { path: bundledFfmpegPath, error: (error as Error).message });
+      }
+    }
+
+    // If bundled FFmpeg doesn't exist or isn't executable, check system PATH
+    try {
+      const { execSync } = require('child_process');
+      const systemFfmpegPath = execSync('which ffmpeg', { encoding: 'utf8' }).trim();
+      if (systemFfmpegPath && existsSync(systemFfmpegPath)) {
+        // Test if the system FFmpeg is actually executable
+        try {
+          execSync(`"${systemFfmpegPath}" -version`, { stdio: 'ignore' });
+          logger.info('Using system FFmpeg binary', { path: systemFfmpegPath });
+          return systemFfmpegPath;
+        } catch (error) {
+          logger.debug('System FFmpeg binary is not executable', { path: systemFfmpegPath, error: (error as Error).message });
+        }
+      }
+    } catch (error) {
+      logger.debug('System FFmpeg not found in PATH', { error: (error as Error).message });
+    }
+
+    // On Windows, try to find ffmpeg.exe
+    if (process.platform === 'win32') {
+      try {
+        const { execSync } = require('child_process');
+        const systemFfmpegPath = execSync('where ffmpeg', { encoding: 'utf8' }).trim();
+        if (systemFfmpegPath && existsSync(systemFfmpegPath)) {
+          // Test if the Windows FFmpeg is actually executable
+          try {
+            execSync(`"${systemFfmpegPath}" -version`, { stdio: 'ignore' });
+            logger.info('Using system FFmpeg binary (Windows)', { path: systemFfmpegPath });
+            return systemFfmpegPath;
+          } catch (error) {
+            logger.debug('Windows FFmpeg binary is not executable', { path: systemFfmpegPath, error: (error as Error).message });
+          }
+        }
+      } catch (error) {
+        logger.debug('System FFmpeg not found in PATH (Windows)', { error: (error as Error).message });
+      }
+    }
+
+    logger.warn('No working FFmpeg binary found');
+    
+    // Show user-friendly notification on macOS
+    if (process.platform === 'darwin') {
+      this.showFfmpegInstallNotification();
+    }
+    
+    return null;
+  }
+
+  /**
+   * Show notification to user about installing FFmpeg on macOS
+   */
+  private showFfmpegInstallNotification(): void {
+    try {
+      const { Notification } = require('electron');
+      
+      if (Notification.isSupported()) {
+        const notification = new Notification({
+          title: 'FFmpeg Not Found',
+          body: 'FFmpeg is required for enhanced video processing. Install it using: brew install ffmpeg',
+          icon: undefined, // Use default icon
+          silent: false
+        });
+        
+        notification.show();
+        
+        // Auto-dismiss after 10 seconds
+        setTimeout(() => {
+          notification.close();
+        }, 10000);
+        
+        logger.info('FFmpeg installation notification shown to user');
+      }
+    } catch (error) {
+      logger.debug('Could not show FFmpeg installation notification', { error: (error as Error).message });
+    }
+  }
+
   private ensureDownloadDirectory(): void {
     const downloadDir = configManager.get('defaultDownloadDir');
     const expandedDir = this.expandPath(downloadDir);
@@ -354,6 +449,20 @@ export class DownloadManager {
       '--no-part', // Don't create .part files
       '--force-overwrites' // Overwrite existing files
     ];
+
+    // Find and add working FFmpeg path
+    const workingFfmpegPath = this.findWorkingFfmpeg();
+    if (workingFfmpegPath) {
+      args.push('--ffmpeg-location', workingFfmpegPath);
+      logger.info('Added working FFmpeg path to yt-dlp command', { 
+        downloadId: download.id, 
+        ffmpegPath: workingFfmpegPath 
+      });
+    } else {
+      logger.warn('No working FFmpeg binary found, yt-dlp will proceed without FFmpeg', { 
+        downloadId: download.id 
+      });
+    }
 
     // Add all captured request headers for maximum download consistency
     if (download.stream.requestHeaders && download.stream.requestHeaders.length > 0) {

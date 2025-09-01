@@ -47,6 +47,7 @@ export class ConfigService {
       maxConcurrentDownloads: 3,
       defaultDownloadDir: '~/Downloads/StreamHelper',
       ytdlpPath: '',
+      ffmpegPath: '',
       autoStartDownloads: true,
       notifications: true,
       appDataPath: '~/.streamhelper',
