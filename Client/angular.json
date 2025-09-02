@@ -23,7 +23,15 @@
             "baseHref": "./",
             "assets": [
               "src/renderer/favicon.ico",
-              "src/renderer/assets"
+              "src/renderer/assets",
+              "src/renderer/icon16.png",
+              "src/renderer/icon32.png",
+              "src/renderer/icon48.png",
+              "src/renderer/icon64.png",
+              "src/renderer/icon128.png",
+              "src/renderer/icon256.png",
+              "src/renderer/icon512.png",
+              "src/renderer/icon@2x.png"
             ],
             "styles": [
               "src/renderer/styles.css",
