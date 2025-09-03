@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ConfigService } from '../../services/config.service';
 import { ThemeService } from '../../services/theme.service';
+import { ToastService } from '../../services/toast.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -300,7 +301,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
   constructor(
     private configService: ConfigService,
-    private themeService: ThemeService
+    private themeService: ThemeService,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -341,22 +343,25 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
   async saveSettings(): Promise<void> {
     try {
-      // Apply theme immediately
-      await this.themeService.setTheme(this.theme);
+      // Apply theme immediately (without saving to config)
+      this.themeService.applyTheme(this.theme);
       
-      // Save other settings
+      // Save all settings in a single atomic operation to prevent race conditions
       const success = await this.configService.updateConfig({
         webSocketPort: this.webSocketPort,
         defaultDownloadDir: this.downloadDirectory,
-        maxConcurrentDownloads: this.maxConcurrentDownloads
+        maxConcurrentDownloads: this.maxConcurrentDownloads,
+        theme: this.theme
       });
 
       if (success) {
-        // Show success message (you can add a toast service here)
-        console.log('Settings saved successfully');
+        this.toastService.showSuccess('Settings Saved', 'All settings have been saved successfully');
+      } else {
+        this.toastService.showError('Save Failed', 'Failed to save settings');
       }
     } catch (error) {
       console.error('Failed to save settings:', error);
+      this.toastService.showError('Save Failed', 'Failed to save settings: ' + (error as Error).message);
     }
   }
 
