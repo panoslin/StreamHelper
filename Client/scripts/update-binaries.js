@@ -5,57 +5,25 @@ const path = require('path');
 const https = require('https');
 const { execSync } = require('child_process');
 
-const YTDLP_VERSION = '2025.08.22';
-const YTDLP_BASE_URL = `https://github.com/yt-dlp/yt-dlp/releases/download/${YTDLP_VERSION}`;
-
-// FFmpeg builds from yt-dlp/FFmpeg-Builds repository
-const FFMPEG_BASE_URL = 'https://github.com/yt-dlp/FFmpeg-Builds/releases/download/autobuild-2025-09-01-14-20';
-
+const VERSION = '2025.08.22';
+const BASE_URL = `https://github.com/yt-dlp/yt-dlp/releases/download/${VERSION}`;
 const BIN_DIR = path.join(__dirname, '..', 'dist', 'bin');
 
 const PLATFORMS = {
   darwin: {
-    ytdlp: {
-      url: `${YTDLP_BASE_URL}/yt-dlp_macos`,
-      filename: 'yt-dlp',
-      executable: true
-    },
-    ffmpeg: {
-      url: `${FFMPEG_BASE_URL}/ffmpeg-N-120866-g45dcfb2d60-macos64-gpl.tar.xz`,
-      filename: 'ffmpeg.tar.xz',
-      executable: true,
-      extract: true,
-      extractPath: 'ffmpeg-N-120866-g45dcfb2d60-macos64-gpl/bin/ffmpeg',
-      optional: true // macOS builds might not always be available
-    }
+    url: `${BASE_URL}/yt-dlp_macos`,
+    filename: 'yt-dlp',
+    executable: true
   },
   linux: {
-    ytdlp: {
-      url: `${YTDLP_BASE_URL}/yt-dlp_linux`,
-      filename: 'yt-dlp',
-      executable: true
-    },
-    ffmpeg: {
-      url: `${FFMPEG_BASE_URL}/ffmpeg-N-120866-g45dcfb2d60-linux64-gpl.tar.xz`,
-      filename: 'ffmpeg.tar.xz',
-      executable: true,
-      extract: true,
-      extractPath: 'ffmpeg-N-120866-g45dcfb2d60-linux64-gpl/bin/ffmpeg'
-    }
+    url: `${BASE_URL}/yt-dlp_linux`,
+    filename: 'yt-dlp',
+    executable: true
   },
   win32: {
-    ytdlp: {
-      url: `${YTDLP_BASE_URL}/yt-dlp.exe`,
-      filename: 'yt-dlp.exe',
-      executable: false
-    },
-    ffmpeg: {
-      url: `${FFMPEG_BASE_URL}/ffmpeg-N-120866-g45dcfb2d60-win64-gpl.zip`,
-      filename: 'ffmpeg.zip',
-      executable: false,
-      extract: true,
-      extractPath: 'ffmpeg-N-120866-g45dcfb2d60-win64-gpl/bin/ffmpeg.exe'
-    }
+    url: `${BASE_URL}/yt-dlp.exe`,
+    filename: 'yt-dlp.exe',
+    executable: false
   }
 };
 
@@ -92,7 +60,7 @@ function downloadFile(url, filepath) {
       });
     }).on('error', reject);
     
-    request.setTimeout(60000, () => { // Increased timeout for larger FFmpeg files
+    request.setTimeout(30000, () => {
       request.destroy();
       reject(new Error('Download timeout'));
     });
@@ -108,110 +76,45 @@ function makeExecutable(filepath) {
   }
 }
 
-function extractArchive(archivePath, extractDir, extractPath) {
-  return new Promise((resolve, reject) => {
-    try {
-      const isZip = archivePath.endsWith('.zip');
-      const extractCommand = isZip 
-        ? `unzip -o "${archivePath}" -d "${extractDir}"`
-        : `tar -xf "${archivePath}" -C "${extractDir}"`;
-      
-      execSync(extractCommand, { stdio: 'inherit' });
-      
-      // Move the extracted binary to the platform directory
-      const extractedBinaryPath = path.join(extractDir, extractPath);
-      const finalBinaryPath = path.join(path.dirname(archivePath), path.basename(extractPath));
-      
-      if (fs.existsSync(extractedBinaryPath)) {
-        fs.renameSync(extractedBinaryPath, finalBinaryPath);
-        console.log(`Extracted and moved: ${finalBinaryPath}`);
-        
-        // Clean up the archive and extracted directory
-        fs.unlinkSync(archivePath);
-        const extractedDir = path.dirname(extractedBinaryPath);
-        if (fs.existsSync(extractedDir)) {
-          execSync(`rm -rf "${extractedDir}"`);
-        }
-        
-        resolve(finalBinaryPath);
-      } else {
-        reject(new Error(`Extracted binary not found at: ${extractedBinaryPath}`));
-      }
-    } catch (error) {
-      reject(error);
-    }
-  });
-}
-
-async function downloadBinary(platform, binaryType, config) {
-  const platformDir = path.join(BIN_DIR, platform);
-  const filepath = path.join(platformDir, config.filename);
-  
-  // Create platform directory if it doesn't exist
-  if (!fs.existsSync(platformDir)) {
-    fs.mkdirSync(platformDir, { recursive: true });
-  }
-  
-  console.log(`Downloading ${platform} ${binaryType}...`);
-  
-  try {
-    await downloadFile(config.url, filepath);
-    console.log(`Downloaded: ${filepath}`);
-    
-    let finalBinaryPath = filepath;
-    
-    // Extract if needed
-    if (config.extract) {
-      console.log(`Extracting ${binaryType}...`);
-      finalBinaryPath = await extractArchive(filepath, platformDir, config.extractPath);
-    }
-    
-    // Make executable if needed
-    if (config.executable && finalBinaryPath !== filepath) {
-      makeExecutable(finalBinaryPath);
-    }
-    
-    // Verify the binary (only for yt-dlp, skip FFmpeg verification on different platforms)
-    if (binaryType === 'ytdlp' && platform !== 'win32') {
-      try {
-        const version = execSync(`"${finalBinaryPath}" --version`, { encoding: 'utf8' }).trim();
-        console.log(`✓ ${platform} ${binaryType} verified: ${version.split('\n')[0]}`);
-      } catch (error) {
-        console.error(`✗ Failed to verify ${platform} ${binaryType}:`, error.message);
-      }
-    }
-    
-    return finalBinaryPath;
-    
-  } catch (error) {
-    if (config.optional) {
-      console.warn(`Skipping optional ${platform} ${binaryType}: ${error.message}`);
-      return null;
-    } else {
-      console.error(`Failed to download ${platform} ${binaryType}:`, error.message);
-      throw error;
-    }
-  }
-}
-
 async function updateBinaries() {
-  console.log(`Updating yt-dlp binaries to version ${YTDLP_VERSION}...`);
-  console.log('Updating FFmpeg binaries to latest version...');
+  console.log(`Updating yt-dlp binaries to version ${VERSION}...`);
   
   // Ensure bin directory exists
   if (!fs.existsSync(BIN_DIR)) {
     fs.mkdirSync(BIN_DIR, { recursive: true });
   }
   
-  for (const [platform, binaries] of Object.entries(PLATFORMS)) {
-    console.log(`\nProcessing ${platform} platform...`);
+  for (const [platform, config] of Object.entries(PLATFORMS)) {
+    const platformDir = path.join(BIN_DIR, platform);
+    const filepath = path.join(platformDir, config.filename);
     
-    for (const [binaryType, config] of Object.entries(binaries)) {
-      try {
-        await downloadBinary(platform, binaryType, config);
-      } catch (error) {
-        console.error(`Failed to process ${platform} ${binaryType}:`, error.message);
+    // Create platform directory if it doesn't exist
+    if (!fs.existsSync(platformDir)) {
+      fs.mkdirSync(platformDir, { recursive: true });
+    }
+    
+    console.log(`Downloading ${platform} binary...`);
+    
+    try {
+      await downloadFile(config.url, filepath);
+      console.log(`Downloaded: ${filepath}`);
+      
+      if (config.executable) {
+        makeExecutable(filepath);
       }
+      
+      // Verify the binary
+      if (platform !== 'win32') {
+        try {
+          const version = execSync(`"${filepath}" --version`, { encoding: 'utf8' }).trim();
+          console.log(`✓ ${platform} binary verified: ${version}`);
+        } catch (error) {
+          console.error(`✗ Failed to verify ${platform} binary:`, error.message);
+        }
+      }
+      
+    } catch (error) {
+      console.error(`Failed to download ${platform} binary:`, error.message);
     }
   }
   

@@ -5,7 +5,7 @@ import { ToastService } from './services/toast.service';
   selector: 'app-root',
   template: `
     <app-layout></app-layout>
-    <app-toast></app-toast>
+    <p-toast></p-toast>
     <p-confirmDialog></p-confirmDialog>
   `,
   styles: []
@@ -15,6 +15,6 @@ export class AppComponent implements OnInit {
 
   ngOnInit(): void {
     // Initialize the app
-    this.toastService.showSuccess('StreamHelper Client started successfully');
+    this.toastService.showSuccess('StreamHelper Client', 'Application started successfully');
   }
 }

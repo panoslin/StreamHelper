@@ -15,28 +15,13 @@ export function getEnvironmentInfo() {
 }
 
 export function getBinaryInfo() {
-  return {
-    ytdlp: getYtDlpBinaryInfo(),
-    ffmpeg: getFfmpegBinaryInfo()
-  };
-}
-
-function getYtDlpBinaryInfo() {
-  return getBinaryInfoFor('yt-dlp');
-}
-
-function getFfmpegBinaryInfo() {
-  return getBinaryInfoFor('ffmpeg');
-}
-
-function getBinaryInfoFor(binaryName: string) {
   // Use the same corrected path resolution logic as ConfigManager
   const platform = process.platform;
-  const executableName = platform === 'win32' ? `${binaryName}.exe` : binaryName;
+  const binaryName = platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp';
   
   // In bundled apps with ASAR enabled:
   // - app.getAppPath() points to the app directory inside Resources
-  // - Binaries are unpacked to app.asar.unpacked/dist/bin/{platform}/{executableName}
+  // - Binaries are unpacked to app.asar.unpacked/dist/bin/{platform}/{binaryName}
   const appPath = app.getAppPath();
   
   // Try multiple possible paths for the unpacked binaries
@@ -44,19 +29,19 @@ function getBinaryInfoFor(binaryName: string) {
   
   // Path 1: Standard unpacked path
   const resourcesPath = appPath.replace('/app', '');
-  const unpackedPath = join(resourcesPath, 'app.asar.unpacked', 'dist', 'bin', platform, executableName);
+  const unpackedPath = join(resourcesPath, 'app.asar.unpacked', 'dist', 'bin', platform, binaryName);
   possiblePaths.push(unpackedPath);
   
   // Path 2: Alternative unpacked path (if app.getAppPath() returns different structure)
-  const altUnpackedPath = join(appPath, '..', 'app.asar.unpacked', 'dist', 'bin', platform, executableName);
+  const altUnpackedPath = join(appPath, '..', 'app.asar.unpacked', 'dist', 'bin', platform, binaryName);
   possiblePaths.push(altUnpackedPath);
   
   // Path 3: Direct unpacked path from app root
-  const directUnpackedPath = join(appPath, 'app.asar.unpacked', 'dist', 'bin', platform, executableName);
+  const directUnpackedPath = join(appPath, 'app.asar.unpacked', 'dist', 'bin', platform, binaryName);
   possiblePaths.push(directUnpackedPath);
   
   // Path 4: Fallback to the old path for development
-  const fallbackPath = join(appPath, 'dist', 'bin', platform, executableName);
+  const fallbackPath = join(appPath, 'dist', 'bin', platform, binaryName);
   possiblePaths.push(fallbackPath);
   
   // Find the first path that exists
@@ -76,7 +61,6 @@ function getBinaryInfoFor(binaryName: string) {
   const currentPlatform = osPlatform();
   
   return {
-    name: binaryName,
     path: binaryPath,
     platform: currentPlatform,
     exists: require('fs').existsSync(binaryPath),

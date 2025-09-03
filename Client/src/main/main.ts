@@ -23,17 +23,8 @@ class StreamHelperApp {
     const binaryInfo = getBinaryInfo();
     logger.info('Binary information', binaryInfo);
 
-    if (!binaryInfo.ytdlp.exists) {
+    if (!binaryInfo.exists) {
       logger.warn('yt-dlp binary not found. Please ensure it is installed.');
-    }
-
-    if (!binaryInfo.ffmpeg.exists) {
-      logger.warn('FFmpeg binary not found. yt-dlp will use system FFmpeg if available.');
-      
-      // Show notification on macOS when FFmpeg is not found
-      if (process.platform === 'darwin') {
-        this.showFfmpegInstallNotification();
-      }
     }
 
     // Setup app event handlers
@@ -152,35 +143,6 @@ class StreamHelperApp {
     });
     
     logger.info('Cleanup completed');
-  }
-
-  /**
-   * Show notification to user about installing FFmpeg on macOS
-   */
-  private showFfmpegInstallNotification(): void {
-    try {
-      const { Notification } = require('electron');
-      
-      if (Notification.isSupported()) {
-        const notification = new Notification({
-          title: 'FFmpeg Not Found',
-          body: 'FFmpeg is required for enhanced video processing. Install it using: brew install ffmpeg',
-          icon: undefined, // Use default icon
-          silent: false
-        });
-        
-        notification.show();
-        
-        // Auto-dismiss after 10 seconds
-        setTimeout(() => {
-          notification.close();
-        }, 10000);
-        
-        logger.info('FFmpeg installation notification shown to user');
-      }
-    } catch (error) {
-      logger.debug('Could not show FFmpeg installation notification', { error: (error as Error).message });
-    }
   }
 }
 
