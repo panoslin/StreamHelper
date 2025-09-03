@@ -924,7 +924,7 @@ export class DownloadsComponent implements OnInit, OnDestroy {
 
   async clearCompleted(): Promise<void> {
     await this.downloadService.clearCompletedDownloads();
-    this.toastService.showSuccess('Completed downloads cleared');
+    this.toastService.showSuccess('Completed downloads cleared', 'Downloads');
     this.cdr.detectChanges();
   }
 
@@ -946,17 +946,17 @@ export class DownloadsComponent implements OnInit, OnDestroy {
         // Use Electron IPC to highlight file in Finder
         (window as any).electronAPI.highlightFileInFinder(filePath).then((result: any) => {
           if (result && result.success) {
-            // this.toastService.showSuccess('File highlighted in Finder');
+            // this.toastService.showSuccess('File highlighted in Finder', 'Downloads');
           } else {
-            this.toastService.showError('Failed to show file in Finder');
+            this.toastService.showError('Failed to show file in Finder', 'Downloads');
           }
         }).catch((error: any) => {
           console.error('Failed to highlight file in Finder:', error);
-          this.toastService.showError('Failed to show file in Finder');
+          this.toastService.showError('Failed to show file in Finder', 'Downloads');
         });
       } catch (error) {
         console.error('Error highlighting file in Finder:', error);
-        this.toastService.showError('Error showing file in Finder');
+        this.toastService.showError('Error showing file in Finder', 'Downloads');
       }
     }
   }
@@ -964,16 +964,16 @@ export class DownloadsComponent implements OnInit, OnDestroy {
   removeDownload(downloadId: string): void {
     this.downloadService.removeDownload(downloadId).then((success: boolean) => {
       if (success) {
-        // this.toastService.showSuccess('Download removed from history');
+        // this.toastService.showSuccess('Download removed from history', 'Downloads');
         // Force change detection to update UI immediately
         this.cdr.detectChanges();
         setTimeout(() => this.cdr.detectChanges(), 100);
       } else {
-        this.toastService.showError('Failed to remove download');
+        this.toastService.showError('Failed to remove download', 'Downloads');
       }
     }).catch((error: any) => {
       console.error('Error removing download:', error);
-      this.toastService.showError('Error removing download');
+      this.toastService.showError('Error removing download', 'Downloads');
     });
   }
 
@@ -983,11 +983,11 @@ export class DownloadsComponent implements OnInit, OnDestroy {
       if (logs) {
         this.showLogsModal(logs, downloadId);
       } else {
-        this.toastService.showError('No logs available for this download');
+        this.toastService.showError('No logs available for this download', 'Downloads');
       }
     } catch (error) {
       console.error('Error viewing download logs:', error);
-      this.toastService.showError('Failed to load download logs');
+      this.toastService.showError('Failed to load download logs', 'Downloads');
     }
   }
 
@@ -995,14 +995,14 @@ export class DownloadsComponent implements OnInit, OnDestroy {
     try {
       const success = await this.downloadService.retryDownload(downloadId);
       if (success) {
-        this.toastService.showSuccess('Download queued for retry');
+        this.toastService.showSuccess('Download queued for retry', 'Downloads');
         // The service automatically reloads downloads after retry
       } else {
-        this.toastService.showError('Failed to retry download');
+        this.toastService.showError('Failed to retry download', 'Downloads');
       }
     } catch (error) {
       console.error('Error retrying download:', error);
-      this.toastService.showError('Error retrying download');
+      this.toastService.showError('Error retrying download', 'Downloads');
     }
   }
 

@@ -1,80 +1,73 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
-
-export interface ToastMessage {
-  id: string;
-  type: 'success' | 'error' | 'info' | 'warning';
-  message: string;
-  duration?: number;
-}
+import { MessageService } from 'primeng/api';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ToastService {
-  private toastsSubject = new BehaviorSubject<ToastMessage[]>([]);
-  public toasts$ = this.toastsSubject.asObservable();
+  constructor(private messageService: MessageService) {}
 
-  constructor() {}
-
-  showSuccess(message: string, duration: number = 3000): void {
-    this.showToast({
-      id: this.generateId(),
-      type: 'success',
-      message,
-      duration
+  showSuccess(summary: string, detail: string): void {
+    this.messageService.add({
+      severity: 'success',
+      summary,
+      detail,
+      life: 3000
     });
   }
 
-  showError(message: string, duration: number = 5000): void {
-    this.showToast({
-      id: this.generateId(),
-      type: 'error',
-      message,
-      duration
+  showInfo(summary: string, detail: string): void {
+    this.messageService.add({
+      severity: 'info',
+      summary,
+      detail,
+      life: 3000
     });
   }
 
-  showInfo(message: string, duration: number = 3000): void {
-    this.showToast({
-      id: this.generateId(),
-      type: 'info',
-      message,
-      duration
+  showWarning(summary: string, detail: string): void {
+    this.messageService.add({
+      severity: 'warn',
+      summary,
+      detail,
+      life: 5000
     });
   }
 
-  showWarning(message: string, duration: number = 4000): void {
-    this.showToast({
-      id: this.generateId(),
-      type: 'warning',
-      message,
-      duration
+  showError(summary: string, detail: string): void {
+    this.messageService.add({
+      severity: 'error',
+      summary,
+      detail,
+      life: 8000
     });
   }
 
-  private showToast(toast: ToastMessage): void {
-    const currentToasts = this.toastsSubject.value;
-    this.toastsSubject.next([...currentToasts, toast]);
-
-    // Auto-remove toast after duration
-    if (toast.duration) {
-      setTimeout(() => {
-        this.removeToast(toast.id);
-      }, toast.duration);
-    }
+  showDownloadStarted(filename: string): void {
+    this.showSuccess('Download Started', `Started downloading: ${filename}`);
   }
 
-  removeToast(id: string): void {
-    const currentToasts = this.toastsSubject.value;
-    this.toastsSubject.next(currentToasts.filter(toast => toast.id !== id));
+  showDownloadCompleted(filename: string): void {
+    this.showSuccess('Download Completed', `Successfully downloaded: ${filename}`);
   }
 
-  clearAll(): void {
-    this.toastsSubject.next([]);
+  showDownloadFailed(filename: string, error: string): void {
+    this.showError('Download Failed', `Failed to download ${filename}: ${error}`);
   }
 
-  private generateId(): string {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  showStreamCaptured(pageTitle: string): void {
+    this.showInfo('Stream Captured', `New stream captured from: ${pageTitle}`);
+  }
+
+  showWebSocketConnected(): void {
+    this.showSuccess('WebSocket Connected', 'Extension connection established');
+  }
+
+  showWebSocketDisconnected(): void {
+    this.showWarning('WebSocket Disconnected', 'Extension connection lost');
+  }
+
+  clear(): void {
+    this.messageService.clear();
   }
 }

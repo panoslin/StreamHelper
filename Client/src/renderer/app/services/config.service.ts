@@ -25,7 +25,11 @@ export class ConfigService {
   async updateConfig(updates: Partial<AppConfig>): Promise<boolean> {
     try {
       const result = await (window as any).electronAPI.updateConfig(updates);
-      return result.success;
+      if (result.success) {
+        await this.loadConfig(); // Reload the config
+        return true;
+      }
+      return false;
     } catch (error) {
       console.error('Failed to update configuration:', error);
       return false;
