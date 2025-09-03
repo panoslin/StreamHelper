@@ -154,7 +154,7 @@ export class DownloadManager {
 
       logger.info('Downloads restored from persistence', { 
         count: this.downloads.size, 
-        queueSize: this.downloadQueue.length 
+        queueSize: this.downloadQueue.length
       });
 
       // Send restored downloads to renderer
@@ -294,6 +294,39 @@ export class DownloadManager {
     return this.downloadQueue.indexOf(downloadItem.id);
   }
 
+  /**
+   * Update the maximum concurrent downloads setting
+   */
+  updateMaxConcurrentDownloads(newValue: number): void {
+    this.maxConcurrentDownloads = newValue;
+    logger.info('Max concurrent downloads updated', { newValue });
+    
+    // Process queue with new limit
+    this.processQueue();
+  }
+
+  /**
+   * Refresh settings from config (useful after app initialization)
+   */
+  refreshSettingsFromConfig(): void {
+    const newMaxConcurrent = configManager.get('maxConcurrentDownloads');
+    
+    if (newMaxConcurrent !== this.maxConcurrentDownloads) {
+      const oldValue = this.maxConcurrentDownloads;
+      this.maxConcurrentDownloads = newMaxConcurrent;
+      
+      logger.info('Max concurrent downloads refreshed from config', { 
+        oldValue,
+        newValue: newMaxConcurrent,
+        activeDownloads: this.activeDownloads.size,
+        queuedDownloads: this.downloadQueue.length
+      });
+      
+      // Process queue with new limit
+      this.processQueue();
+    }
+  }
+
   private processQueue(): void {
     const activeCount = this.activeDownloads.size;
     const availableSlots = this.maxConcurrentDownloads - activeCount;
@@ -302,9 +335,19 @@ export class DownloadManager {
       return;
     }
 
-    for (let i = 0; i < availableSlots && i < this.downloadQueue.length; i++) {
+    const downloadsToStart = Math.min(availableSlots, this.downloadQueue.length);
+    logger.info('Processing download queue', {
+      activeDownloads: activeCount,
+      maxConcurrent: this.maxConcurrentDownloads,
+      availableSlots,
+      queuedDownloads: this.downloadQueue.length,
+      downloadsToStart
+    });
+
+    for (let i = 0; i < downloadsToStart; i++) {
       const downloadId = this.downloadQueue.shift();
       if (downloadId) {
+        logger.info('Starting queued download', { downloadId });
         this.startDownload(downloadId);
       }
     }

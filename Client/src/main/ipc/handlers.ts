@@ -41,6 +41,12 @@ export class IPCHandlers {
         });
       }
       
+      // Update download manager settings if maxConcurrentDownloads was changed
+      if (updates.maxConcurrentDownloads !== undefined) {
+        const { downloadManager } = require('../download/manager');
+        downloadManager.updateMaxConcurrentDownloads(updates.maxConcurrentDownloads);
+      }
+      
       return { success: true };
     });
 

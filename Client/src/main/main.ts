@@ -129,6 +129,8 @@ class StreamHelperApp {
       if (this.mainWindow) {
         ipcHandlers.setMainWindow(this.mainWindow);
       }
+      // Refresh download manager settings from config
+      downloadManager.refreshSettingsFromConfig();
     });
 
     // Handle window closed
