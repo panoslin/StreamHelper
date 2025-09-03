@@ -15,17 +15,23 @@ export function getEnvironmentInfo() {
 }
 
 export function getBinaryInfo() {
-  // Use the same corrected path resolution logic as ConfigManager
   const platform = process.platform;
-  const binaryName = platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp';
+  const currentPlatform = osPlatform();
   
+  return {
+    ytdlp: getBinaryPathInfo(platform, 'yt-dlp', platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp'),
+    ffmpeg: getBinaryPathInfo(platform, 'ffmpeg', platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg')
+  };
+}
+
+function getBinaryPathInfo(platform: string, binaryType: string, binaryName: string) {
   // In bundled apps with ASAR enabled:
   // - app.getAppPath() points to the app directory inside Resources
   // - Binaries are unpacked to app.asar.unpacked/dist/bin/{platform}/{binaryName}
   const appPath = app.getAppPath();
   
   // Try multiple possible paths for the unpacked binaries
-  const possiblePaths = [];
+  const possiblePaths: string[] = [];
   
   // Path 1: Standard unpacked path
   const resourcesPath = appPath.replace('/app', '');
@@ -45,7 +51,7 @@ export function getBinaryInfo() {
   possiblePaths.push(fallbackPath);
   
   // Find the first path that exists
-  let binaryPath = null;
+  let binaryPath: string = unpackedPath;
   for (const path of possiblePaths) {
     if (require('fs').existsSync(path)) {
       binaryPath = path;
@@ -53,18 +59,12 @@ export function getBinaryInfo() {
     }
   }
   
-  // If no path exists, use the first unpacked path as default
-  if (!binaryPath) {
-    binaryPath = unpackedPath;
-  }
-  
-  const currentPlatform = osPlatform();
-  
   return {
     path: binaryPath,
-    platform: currentPlatform,
+    platform: osPlatform(),
     exists: require('fs').existsSync(binaryPath),
-    executable: currentPlatform !== 'win32' // Unix-like systems need executable permissions
+    executable: platform !== 'win32', // Unix-like systems need executable permissions
+    type: binaryType
   };
 }
 

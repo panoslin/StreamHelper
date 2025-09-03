@@ -1,11 +1,12 @@
 import { app, BrowserWindow, ipcMain, shell, nativeTheme } from 'electron';
 import { join } from 'path';
+import { existsSync } from 'fs';
 import { logger } from './utils/logger';
 import { configManager } from './config/manager';
 import { webSocketManager } from './communication/websocket';
 import { downloadManager } from './download/manager';
 import { ipcHandlers } from './ipc/handlers';
-import { getEnvironmentInfo, getBinaryInfo } from './utils/environment';
+import { getEnvironmentInfo } from './utils/environment';
 
 class StreamHelperApp {
   private mainWindow: BrowserWindow | null = null;
@@ -20,11 +21,25 @@ class StreamHelperApp {
     logger.info('StreamHelper Client starting...', getEnvironmentInfo());
     
     // Check binary availability
-    const binaryInfo = getBinaryInfo();
-    logger.info('Binary information', binaryInfo);
+    const config = configManager.getConfig();
+    logger.info('Binary paths configured', {
+      ytdlpPath: config.ytdlpPath,
+      ffmpegPath: config.ffmpegPath
+    });
 
-    if (!binaryInfo.exists) {
+    if (!config.ytdlpPath || !existsSync(config.ytdlpPath)) {
       logger.warn('yt-dlp binary not found. Please ensure it is installed.');
+    }
+
+    if (!config.ffmpegPath || !existsSync(config.ffmpegPath)) {
+      logger.warn('FFmpeg binary not found. yt-dlp will use system FFmpeg if available.');
+      
+      // Show notification on macOS when FFmpeg is not found
+      if (process.platform === 'darwin') {
+        this.showFfmpegInstallNotification();
+      }
+    } else {
+      logger.info('FFmpeg binary found and ready', { path: config.ffmpegPath });
     }
 
     // Setup app event handlers
@@ -143,6 +158,35 @@ class StreamHelperApp {
     });
     
     logger.info('Cleanup completed');
+  }
+
+  /**
+   * Show notification to user about installing FFmpeg on macOS
+   */
+  private showFfmpegInstallNotification(): void {
+    try {
+      const { Notification } = require('electron');
+      
+      if (Notification.isSupported()) {
+        const notification = new Notification({
+          title: 'FFmpeg Not Found',
+          body: 'FFmpeg is required for enhanced video processing. Install it using: brew install ffmpeg',
+          icon: undefined, // Use default icon
+          silent: false
+        });
+        
+        notification.show();
+        
+        // Auto-dismiss after 10 seconds
+        setTimeout(() => {
+          notification.close();
+        }, 10000);
+        
+        logger.info('FFmpeg installation notification shown to user');
+      }
+    } catch (error) {
+      logger.debug('Could not show FFmpeg installation notification', { error: (error as Error).message });
+    }
   }
 }
 

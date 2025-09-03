@@ -20,7 +20,8 @@
     "package:win": "electron-builder --win",
     "package:linux": "electron-builder --linux",
     "build:app": "./scripts/build-app.sh",
-    "update-binaries": "node scripts/update-binaries.js"
+    "update-binaries": "node scripts/update-binaries.js",
+    "test-binaries": "node scripts/test-binaries.js"
   },
   "keywords": ["electron", "angular", "streaming", "downloads", "yt-dlp"],
   "author": {

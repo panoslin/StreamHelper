@@ -332,6 +332,7 @@ export class DownloadManager {
     }
 
     const ytdlpPath = configManager.get('ytdlpPath');
+    const ffmpegPath = configManager.get('ffmpegPath');
     const downloadDir = configManager.get('defaultDownloadDir');
     const expandedDir = this.expandPath(downloadDir);
     
@@ -354,6 +355,17 @@ export class DownloadManager {
       '--no-part', // Don't create .part files
       '--force-overwrites' // Overwrite existing files
     ];
+
+    // Add bundled FFmpeg path if available
+    if (ffmpegPath && existsSync(ffmpegPath)) {
+      args.push('--ffmpeg-location', ffmpegPath);
+      logger.info('Using bundled FFmpeg for download', { 
+        downloadId: download.id, 
+        ffmpegPath: ffmpegPath 
+      });
+    } else {
+      logger.info('Using system FFmpeg (if available) for download', { downloadId: download.id });
+    }
 
     // Add all captured request headers for maximum download consistency
     if (download.stream.requestHeaders && download.stream.requestHeaders.length > 0) {

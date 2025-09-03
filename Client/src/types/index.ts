@@ -51,6 +51,7 @@ export interface AppConfig {
   maxConcurrentDownloads: number;
   defaultDownloadDir: string;
   ytdlpPath: string;
+  ffmpegPath: string;
   autoStartDownloads: boolean;
   notifications: boolean;
   appDataPath: string;

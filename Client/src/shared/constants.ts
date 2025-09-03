@@ -7,6 +7,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   maxConcurrentDownloads: 3,
   defaultDownloadDir: '~/Downloads/StreamHelper',
   ytdlpPath: '', // Will be set by ConfigManager.ensureBinaryPath()
+  ffmpegPath: '', // Will be set by ConfigManager.ensureBinaryPath()
   autoStartDownloads: true,
   notifications: true,
   appDataPath: '~/.streamhelper',

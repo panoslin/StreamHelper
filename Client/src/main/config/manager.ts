@@ -20,6 +20,7 @@ export class ConfigManager {
       if (existsSync(this.configPath)) {
         const configData = readFileSync(this.configPath, 'utf8');
         const loadedConfig = JSON.parse(configData);
+        // Ensure all required fields are present by merging with defaults
         this.config = { ...DEFAULT_CONFIG, ...loadedConfig };
         logger.info('Configuration loaded from file', { path: this.configPath });
       } else {
@@ -45,60 +46,68 @@ export class ConfigManager {
   }
 
   private ensureBinaryPath(): void {
+    const platform = process.platform;
+    const appPath = app.getAppPath();
+    
+
+    
+    // Ensure yt-dlp path
     if (!this.config.ytdlpPath) {
-      // Use Electron's app path and platform detection for bundled app
-      const platform = process.platform;
-      const binaryName = platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp';
-      
-      // In bundled apps with ASAR enabled:
-      // - app.getAppPath() points to the app directory inside Resources
-      // - Binaries are unpacked to app.asar.unpacked/dist/bin/{platform}/{binaryName}
-      const appPath = app.getAppPath();
-      
-      // Try multiple possible paths for the unpacked binaries
-      const possiblePaths = [];
-      
-      // Path 1: Standard unpacked path
-      const resourcesPath = appPath.replace('/app', '');
-      const unpackedPath = join(resourcesPath, 'app.asar.unpacked', 'dist', 'bin', platform, binaryName);
-      possiblePaths.push(unpackedPath);
-      
-      // Path 2: Alternative unpacked path (if app.getAppPath() returns different structure)
-      const altUnpackedPath = join(appPath, '..', 'app.asar.unpacked', 'dist', 'bin', platform, binaryName);
-      possiblePaths.push(altUnpackedPath);
-      
-      // Path 3: Direct unpacked path from app root
-      const directUnpackedPath = join(appPath, 'app.asar.unpacked', 'dist', 'bin', platform, binaryName);
-      possiblePaths.push(directUnpackedPath);
-      
-      // Path 4: Fallback to the old path for development
-      const fallbackPath = join(appPath, 'dist', 'bin', platform, binaryName);
-      possiblePaths.push(fallbackPath);
-      
-      // Find the first path that exists
-      let binaryPath = null;
-      for (const path of possiblePaths) {
-        if (existsSync(path)) {
-          binaryPath = path;
-          break;
-        }
-      }
-      
-      // If no path exists, use the first unpacked path as default
-      if (!binaryPath) {
-        binaryPath = unpackedPath;
-      }
-      
-      this.config.ytdlpPath = binaryPath;
-      this.saveConfig();
-      logger.info('Binary path set', { 
-        path: binaryPath, 
+      const ytdlpBinaryName = platform === 'win32' ? 'yt-dlp.exe' : 'yt-dlp';
+      const ytdlpPath = this.findBinaryPath(appPath, platform, ytdlpBinaryName);
+      this.config.ytdlpPath = ytdlpPath;
+      logger.info('yt-dlp binary path set', { 
+        path: ytdlpPath, 
         platform, 
-        appPath, 
-        possiblePaths,
-        exists: existsSync(binaryPath)
+        exists: existsSync(ytdlpPath)
       });
     }
+    
+    // Ensure FFmpeg path
+    if (!this.config.ffmpegPath) {
+      const ffmpegBinaryName = platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg';
+      const ffmpegPath = this.findBinaryPath(appPath, platform, ffmpegBinaryName);
+      this.config.ffmpegPath = ffmpegPath;
+      logger.info('FFmpeg binary path set', { 
+        path: ffmpegPath, 
+        platform, 
+        exists: existsSync(ffmpegPath)
+      });
+    }
+    
+    this.saveConfig();
+  }
+
+  private findBinaryPath(appPath: string, platform: string, binaryName: string): string {
+    // Try multiple possible paths for the unpacked binaries
+    const possiblePaths: string[] = [];
+    
+    // Path 1: Standard unpacked path
+    const resourcesPath = appPath.replace('/app', '');
+    const unpackedPath = join(resourcesPath, 'app.asar.unpacked', 'dist', 'bin', platform, binaryName);
+    possiblePaths.push(unpackedPath);
+    
+    // Path 2: Alternative unpacked path (if app.getAppPath() returns different structure)
+    const altUnpackedPath = join(appPath, '..', 'app.asar.unpacked', 'dist', 'bin', platform, binaryName);
+    possiblePaths.push(altUnpackedPath);
+    
+    // Path 3: Direct unpacked path from app root
+    const directUnpackedPath = join(appPath, 'app.asar.unpacked', 'dist', 'bin', platform, binaryName);
+    possiblePaths.push(directUnpackedPath);
+    
+    // Path 4: Fallback to the old path for development
+    const fallbackPath = join(appPath, 'dist', 'bin', platform, binaryName);
+    possiblePaths.push(fallbackPath);
+    
+    // Find the first path that exists
+    for (const path of possiblePaths) {
+      if (existsSync(path)) {
+        return path;
+      }
+    }
+    
+    // If no path exists, use the first unpacked path as default
+    return unpackedPath;
   }
 
   getConfig(): AppConfig {
